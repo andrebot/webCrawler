@@ -10,6 +10,7 @@ mockReq('request-promise', async function () {
 const Crawler = require('./crawler');
 
 const DUMMY_URL = 'https://www.avenuecode.com';
+const DUMMY_BAD_URL = 'mamamia';
 
 describe('Crawler', function () {
   before(function () {
@@ -25,7 +26,30 @@ describe('Crawler', function () {
       should.exist($('body'));
 
     } catch(error) {
-      should.fail(error, undefined, 'Should not throw an error');
+      should.fail(error, undefined, 'Should have not thrown an error.');
+    }
+  });
+
+  it('Should not accept invalid urls', async function () {
+    try {
+      const $ = await this.crawler.request(DUMMY_BAD_URL);
+    } catch (error) {
+      should.exist(error);
+      error.toString().should.be.eq('Error: Invalid url');
+    }
+
+    try {
+      const $ = await this.crawler.request();
+    } catch (error) {
+      should.exist(error);
+      error.toString().should.be.eq('Error: Invalid url');
+    }
+
+    try {
+      const $ = await this.crawler.request('');
+    } catch (error) {
+      should.exist(error);
+      error.toString().should.be.eq('Error: Invalid url');
     }
   });
 });

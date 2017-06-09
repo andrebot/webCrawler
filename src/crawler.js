@@ -7,7 +7,13 @@ const Crawler = {
   request
 };
 
+const _urlRegExp = new RegExp('^http[s]?:\\/\\/(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\\/|\\/([\\w#!:.?+=&%@!\\-\\/]))?');
+
 async function request(url) {
+  if (!_urlRegExp.test(url)) {
+    throw new Error('Invalid url');
+  }
+
   const options = {
     url,
     transform: function (body) {
