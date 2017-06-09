@@ -5,7 +5,8 @@ const Cheerio = require('cheerio');
 
 const Crawler = {
   request,
-  getAllImgs
+  getAllImgs,
+  getAllLinks
 };
 
 const _urlRegExp = new RegExp('^http[s]?:\\/\\/(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\\/|\\/([\\w#!:.?+=&%@!\\-\\/]))?');
@@ -32,6 +33,10 @@ async function request(url) {
 
 function getAllImgs($) {
   return $('img');
+}
+
+function getAllLinks($) {
+  return $('a');
 }
 
 module.exports = function Factory () {

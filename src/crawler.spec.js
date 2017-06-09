@@ -13,6 +13,12 @@ function getDummyHtml () {
       <div>
         <img></img>
       </div>
+      <a></a>
+      <div>
+        <div>
+          <a></a>
+        </div>
+      </div>
     </body>
   </html>`;
 
@@ -77,5 +83,19 @@ describe('Crawler', function () {
       element.should.have.property('name');
       element['name'].should.be.eq('img');
     });
+  });
+
+  it('Should be able to get all links from a document', function () {
+    const testHtml = getDummyHtml();
+
+    const links = this.crawler.getAllLinks(testHtml);
+
+    should.exist(links);
+    links.length.should.be.gt(0);
+    links.each(function (index, element) {
+      element.should.have.property('name');
+      element['name'].should.be.eq('a');
+    });
+
   });
 });
