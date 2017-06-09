@@ -48,9 +48,9 @@ async function crawlPage(url) {
     $('a').each(function (index, element) {
       const link = $(element).attr('href');
 
-      if (/*is a valid domain*/) {
+      /*if (is a valid domain) {
         addUrlToCrawl();
-      }
+      }*/
     });
 
     $('link').each(function (index, element) {
