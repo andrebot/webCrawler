@@ -1,8 +1,13 @@
 'use strcit';
 
-const Crawler = require('./crawler');
-const should  = require('chai').should();
+const mockReq = require('mock-require');
 const Cheerio = require('cheerio');
+const should  = require('chai').should();
+
+mockReq('request-promise', async function () {
+  return Cheerio.load('<html><head></head><body></body></html>');
+});
+const Crawler = require('./crawler');
 
 const DUMMY_URL = 'https://www.avenuecode.com';
 
