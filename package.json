@@ -7,7 +7,8 @@
     "node": "8.1.0"
   },
   "scripts": {
-    "test": "gulp test"
+    "test": "gulp test",
+    "tdd": "gulp watch:test"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "chai": "^4.0.2",
     "gulp": "^3.9.1",
+    "gulp-batch": "^1.0.5",
     "gulp-mocha": "^4.3.1",
     "mocha": "^3.4.2",
     "require-dir": "^0.3.2"
