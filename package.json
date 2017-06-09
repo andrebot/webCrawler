@@ -1,0 +1,19 @@
+{
+  "name": "webcrawler",
+  "version": "1.0.0",
+  "description": "website crawler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrebot/webCrawler.git"
+  },
+  "author": "Andre Almeida",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andrebot/webCrawler/issues"
+  },
+  "homepage": "https://github.com/andrebot/webCrawler#readme"
+}
