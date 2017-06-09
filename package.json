@@ -8,8 +8,7 @@
   },
   "scripts": {
     "test": "gulp test",
-    "tdd": "gulp watch:test",
-    "opa": "mocha -w src/**/*.spec.js"
+    "tdd": "mocha -w src/**/*.spec.js"
   },
   "repository": {
     "type": "git",
