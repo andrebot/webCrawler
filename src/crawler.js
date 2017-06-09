@@ -16,7 +16,7 @@ async function request(url) {
   }
 
   try {
-    const website = await Request(options);
+    return await Request(options);
   } catch(error) {
     console.error(error);
     console.error(`Could not request from ${url}.`);

@@ -1,20 +1,26 @@
 'use strcit';
 
 const Crawler = require('./crawler');
-require('chai').should();
+const should  = require('chai').should();
+const Cheerio = require('cheerio');
+
+const DUMMY_URL = 'https://www.avenuecode.com';
 
 describe('Crawler', function () {
   before(function () {
     this.crawler = Crawler();
   });
 
-  it('Should be able to request a website', async function (done) {
+  it('Should be able to request a website', async function () {
     try {
-      await this.crawler.request('https://www.avenuecode.com');
+      const $ = await this.crawler.request(DUMMY_URL);
 
-      done();
+      should.exist($);
+      $.should.be.a('function');
+      should.exist($('body'));
+
     } catch(error) {
-      done(error);
+      should.fail(error, undefined, 'Should not throw an error');
     }
   });
 });
