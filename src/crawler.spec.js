@@ -7,7 +7,11 @@ const should  = require('chai').should();
 function getDummyHtml () {
  const html = 
   `<html>
-    <head></head>
+    <head>
+      <link rel="stylesheet" type="text/css" href="any.css"
+      <link rel="stylesheet" type="text/css" href="any2.css"
+      <link rel="stylesheet" type="text/css" href="any3.css"
+    </head>
     <body>
       <img></img>
       <div>
@@ -72,30 +76,5 @@ describe('Crawler', function () {
     }
   });
 
-  it('Should be able to get all img tags from a document', function () {
-    const testHtml = getDummyHtml();
-
-    const imgs = this.crawler.getAllImgs(testHtml);
-
-    should.exist(imgs);
-    imgs.length.should.be.gt(0);
-    imgs.each(function (index, element) {
-      element.should.have.property('name');
-      element['name'].should.be.eq('img');
-    });
-  });
-
-  it('Should be able to get all links from a document', function () {
-    const testHtml = getDummyHtml();
-
-    const links = this.crawler.getAllLinks(testHtml);
-
-    should.exist(links);
-    links.length.should.be.gt(0);
-    links.each(function (index, element) {
-      element.should.have.property('name');
-      element['name'].should.be.eq('a');
-    });
-
-  });
+  
 });
