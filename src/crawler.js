@@ -4,7 +4,8 @@ const Request = require('request-promise');
 const Cheerio = require('cheerio');
 
 const Crawler = {
-  request
+  request,
+  getAllImgs
 };
 
 const _urlRegExp = new RegExp('^http[s]?:\\/\\/(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\\/|\\/([\\w#!:.?+=&%@!\\-\\/]))?');
@@ -27,6 +28,10 @@ async function request(url) {
     console.error(error);
     console.error(`Could not request from ${url}.`);
   }
+}
+
+function getAllImgs($) {
+  return $('img');
 }
 
 module.exports = function Factory () {

@@ -4,9 +4,22 @@ const mockReq = require('mock-require');
 const Cheerio = require('cheerio');
 const should  = require('chai').should();
 
-mockReq('request-promise', async function () {
-  return Cheerio.load('<html><head></head><body></body></html>');
-});
+function getDummyHtml () {
+ const html = 
+  `<html>
+    <head></head>
+    <body>
+      <img></img>
+      <div>
+        <img></img>
+      </div>
+    </body>
+  </html>`;
+
+  return Cheerio.load(html);
+}
+
+mockReq('request-promise', getDummyHtml);
 const Crawler = require('./crawler');
 
 const DUMMY_URL = 'https://www.avenuecode.com';
@@ -51,5 +64,18 @@ describe('Crawler', function () {
       should.exist(error);
       error.toString().should.be.eq('Error: Invalid url');
     }
+  });
+
+  it('Should be able to get all img tags from a document', function () {
+    const testHtml = getDummyHtml();
+
+    const imgs = this.crawler.getAllImgs(testHtml);
+
+    should.exist(imgs);
+    imgs.length.should.be.gt(0);
+    imgs.each(function (index, element) {
+      element.should.have.property('name');
+      element['name'].should.be.eq('img');
+    });
   });
 });
