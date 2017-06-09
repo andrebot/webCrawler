@@ -42,7 +42,7 @@ describe('Crawler', function () {
 
   it('Should be able to request a website', async function () {
     try {
-      const $ = await this.crawler.request(DUMMY_URL);
+      const $ = await this.crawler.requestPage(DUMMY_URL);
 
       should.exist($);
       $.should.be.a('function');
@@ -55,26 +55,24 @@ describe('Crawler', function () {
 
   it('Should not accept invalid urls', async function () {
     try {
-      const $ = await this.crawler.request(DUMMY_BAD_URL);
+      const $ = await this.crawler.requestPage(DUMMY_BAD_URL);
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('Error: Invalid url');
     }
 
     try {
-      const $ = await this.crawler.request();
+      const $ = await this.crawler.requestPage();
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('Error: Invalid url');
     }
 
     try {
-      const $ = await this.crawler.request('');
+      const $ = await this.crawler.requestPage('');
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('Error: Invalid url');
     }
   });
-
-  
 });
