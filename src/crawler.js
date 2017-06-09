@@ -46,13 +46,16 @@ async function crawlPage(url) {
     });
 
     $('a').each(function (index, element) {
+      const link = $(element).attr('href');
+
       if (/*is a valid domain*/) {
-        addUrlToCrawl($(element).attr('href'));
+        addUrlToCrawl();
       }
     });
 
     $('link').each(function (index, element) {
       const value = $(element).attr('href');
+
       if (/.*css$/.test(value)) {
         page.assets.push(value);
       }
