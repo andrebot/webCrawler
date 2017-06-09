@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "website crawler",
   "main": "index.js",
+  "engines": {
+    "node": "7.4.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +18,15 @@
   "bugs": {
     "url": "https://github.com/andrebot/webCrawler/issues"
   },
-  "homepage": "https://github.com/andrebot/webCrawler#readme"
+  "homepage": "https://github.com/andrebot/webCrawler#readme",
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "gulp": "^3.9.1",
+    "gulp-mocha": "^4.3.1",
+    "mocha": "^3.4.2"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.1",
+    "request": "^2.81.0"
+  }
 }
