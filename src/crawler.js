@@ -2,14 +2,18 @@
 
 const Request = require('request-promise');
 const Cheerio = require('cheerio');
+const Util    = require('./util');
 
 const Crawler = {
   requestPage,
-  addUrlToCrawl
+  addUrlToCrawl,
+  getAllCSS
 };
 
+const _util = Util();
 const _pagesToVisit = [];
 const _contents = [];
+const _domain = '';
 const _urlRegExp = new RegExp('^http[s]?:\\/\\/(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\\/|\\/([\\w#!:.?+=&%@!\\-\\/]))?');
 
 async function requestPage(url) {
@@ -32,38 +36,51 @@ async function requestPage(url) {
   }
 }
 
+function getAllCSS ($) {
+  const css = [];
+
+  $('link').each(function (index, element) {
+    const value = $(element).attr('href');
+
+    if (/.*css$/.test(value)) {
+      css.push(value);
+    }
+  });
+
+  return css;
+}
+
 async function crawlPage(url) {
   try {
     const $ = await requestPage(url);
+    _domain = _util.extractHostname(url);
 
     const page = {
       url: url,
       assets: []
     };
 
-    $('imgs').each(function (index, element) {
-      page.assets.push($(element).attr('src'));
-    });
+    getAllCSS($);
 
-    $('a').each(function (index, element) {
-      const link = $(element).attr('href');
+    // $('a').each(function (index, element) {
+    //   const link = $(element).attr('href');
 
-      /*if (is a valid domain) {
-        addUrlToCrawl();
-      }*/
-    });
+    //   /*if (is a valid domain) {
+    //     addUrlToCrawl();
+    //   }*/
+    // });
 
-    $('link').each(function (index, element) {
-      const value = $(element).attr('href');
+    // $('link').each(function (index, element) {
+    //   const value = $(element).attr('href');
 
-      if (/.*css$/.test(value)) {
-        page.assets.push(value);
-      }
-    });
+    //   if (/.*css$/.test(value)) {
+    //     page.assets.push(value);
+    //   }
+    // });
 
-    $('script').each(function (index, element) {
+    // $('script').each(function (index, element) {
 
-    });
+    // });
   } catch (error) {
     if (error.message === 'Invalid url') {
       console.log('We couldn\`t get the page due to malformed URL, please try again with a valid URL.')

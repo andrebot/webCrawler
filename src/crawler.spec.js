@@ -8,9 +8,9 @@ function getDummyHtml () {
  const html = 
   `<html>
     <head>
-      <link rel="stylesheet" type="text/css" href="any.css"
-      <link rel="stylesheet" type="text/css" href="any2.css"
-      <link rel="stylesheet" type="text/css" href="any3.css"
+      <link rel="stylesheet" type="text/css" href="any.css"/>
+      <link rel="stylesheet" type="text/css" href="any2.css"/>
+      <link rel="stylesheet" type="text/css" href="https://cdn.com.br/1.1.4/any.css"/>
     </head>
     <body>
       <img></img>
@@ -74,5 +74,18 @@ describe('Crawler', function () {
       should.exist(error);
       error.toString().should.be.eq('Error: Invalid url');
     }
+  });
+
+  it('Should be able to find all css files in a HTML document', function () {
+    const cssFound = this.crawler.getAllCSS(getDummyHtml());
+
+    should.exist(cssFound);
+    cssFound.should.be.an('array');
+    cssFound.length.should.be.gt(0);
+    cssFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/.*css$/);
+    });
   });
 });
