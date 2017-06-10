@@ -2,6 +2,7 @@
 
 const mockReq = require('mock-require');
 const Cheerio = require('cheerio');
+const URL     = require('url');
 const should  = require('chai').should();
 
 function getDummyHtml () {
@@ -26,6 +27,10 @@ function getDummyHtml () {
           <a></a>
         </div>
       </div>
+
+      <script src="/js/lib/generic-framework.js"></script>
+      <script src="/js/main.js"></script>
+      <script src="/js/vendor.js"></script>
     </body>
   </html>`;
 
@@ -41,6 +46,7 @@ const DUMMY_BAD_URL = 'mamamia';
 describe('Crawler', function () {
   before(function () {
     this.crawler = Crawler();
+    this.dummyHtml = getDummyHtml();
   });
 
   it('Should be able to request a website', async function () {
@@ -61,26 +67,26 @@ describe('Crawler', function () {
       const $ = await this.crawler.requestPage(DUMMY_BAD_URL);
     } catch (error) {
       should.exist(error);
-      error.toString().should.be.eq('Error: Invalid url');
+      error.toString().should.be.eq(`TypeError [ERR_INVALID_URL]: Invalid URL: ${DUMMY_BAD_URL}`);
     }
 
     try {
       const $ = await this.crawler.requestPage();
     } catch (error) {
       should.exist(error);
-      error.toString().should.be.eq('Error: Invalid url');
+      error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: undefined');
     }
 
     try {
       const $ = await this.crawler.requestPage('');
     } catch (error) {
       should.exist(error);
-      error.toString().should.be.eq('Error: Invalid url');
+      error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: ');
     }
   });
 
   it('Should be able to find all css files and images from link elements', function () {
-    const cssFound = this.crawler.crawlOverLinkElements(getDummyHtml());
+    const cssFound = this.crawler.crawlOverLinkElements(this.dummyHtml);
 
     should.exist(cssFound);
     cssFound.should.be.an('array');
@@ -89,6 +95,21 @@ describe('Crawler', function () {
       should.exist(string);
       string.should.not.be.empty;
       string.should.match(/.*(css|png|jpeg|jpg|ico|gif)$/);
+    });
+  });
+
+  it('Should be able to find all script files', function () {
+    const jsFound = this.crawler.crawlOverScriptElements(this.dummyHtml);
+
+    const scriptsFound = this.crawler.crawlOverScriptElements(this.dummyHtml);
+
+    should.exist(jsFound);
+    jsFound.should.be.an('array');
+    jsFound.length.should.be.gt(0);
+    jsFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/.*js$/);
     });
   });
 });

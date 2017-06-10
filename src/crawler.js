@@ -2,27 +2,24 @@
 
 const Request = require('request-promise');
 const Cheerio = require('cheerio');
-const Util    = require('./util');
+const { URL } = require('url');
 
 const Crawler = {
   requestPage,
   addUrlToCrawl,
-  crawlOverLinkElements
+  crawlOverLinkElements,
+  crawlOverScriptElements
 };
 
-const _util = Util();
 const _pagesToVisit = [];
 const _contents = [];
-const _domain = '';
-const _urlRegExp = new RegExp('^http[s]?:\\/\\/(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\\/|\\/([\\w#!:.?+=&%@!\\-\\/]))?');
+let _domain;
 
 async function requestPage(url) {
-  if (!_urlRegExp.test(url)) {
-    throw new Error('Invalid url');
-  }
+  _domain = new URL(url);
 
   const options = {
-    url,
+    url: _domain.href,
     transform: function (body) {
       return Cheerio.load(body);
     }
@@ -51,10 +48,23 @@ function crawlOverLinkElements ($) {
   return content;
 }
 
+function crawlOverScriptElements($) {
+  const content = [];
+
+  $('script').each(function (index, element) {
+    const value = $(element).attr('src');
+
+    if (/.*js/.test(value)) {
+      content.push(value);
+    }
+  });
+
+  return content;
+}
+
 async function crawlPage(url) {
   try {
     const $ = await requestPage(url);
-    _domain = _util.extractHostname(url);
 
     const page = {
       url: url,
@@ -62,6 +72,7 @@ async function crawlPage(url) {
     };
 
     page.assets.concat(crawlOverLinkElements($));
+    page.assets.concat(crawlOverScriptElements($));
 
     // $('a').each(function (index, element) {
     //   const link = $(element).attr('href');
