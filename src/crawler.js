@@ -7,7 +7,7 @@ const Util    = require('./util');
 const Crawler = {
   requestPage,
   addUrlToCrawl,
-  getAllCSS
+  crawlOverLinkElements
 };
 
 const _util = Util();
@@ -36,18 +36,19 @@ async function requestPage(url) {
   }
 }
 
-function getAllCSS ($) {
-  const css = [];
+function crawlOverLinkElements ($) {
+  const content = [];
 
   $('link').each(function (index, element) {
     const value = $(element).attr('href');
 
-    if (/.*css$/.test(value)) {
-      css.push(value);
+    if (/.*(css|png|jpeg|jpg|ico|gif)/i.test(value)) {
+      content.push(value);
     }
+
   });
 
-  return css;
+  return content;
 }
 
 async function crawlPage(url) {
@@ -60,7 +61,7 @@ async function crawlPage(url) {
       assets: []
     };
 
-    getAllCSS($);
+    page.assets.concat(crawlOverLinkElements($));
 
     // $('a').each(function (index, element) {
     //   const link = $(element).attr('href');
@@ -68,14 +69,6 @@ async function crawlPage(url) {
     //   /*if (is a valid domain) {
     //     addUrlToCrawl();
     //   }*/
-    // });
-
-    // $('link').each(function (index, element) {
-    //   const value = $(element).attr('href');
-
-    //   if (/.*css$/.test(value)) {
-    //     page.assets.push(value);
-    //   }
     // });
 
     // $('script').each(function (index, element) {

@@ -11,6 +11,9 @@ function getDummyHtml () {
       <link rel="stylesheet" type="text/css" href="any.css"/>
       <link rel="stylesheet" type="text/css" href="any2.css"/>
       <link rel="stylesheet" type="text/css" href="https://cdn.com.br/1.1.4/any.css"/>
+      <link rel="shortcut icon" href="https://assets.any.com/images/favicon.ico">
+      <link rel="apple-touch-icon" href="https://assets.any.com/images/apple-touch-icon-iphone.png">
+      <link rel="apple-touch-icon" sizes="72x72" href="https://assets.anny.com/images/apple-touch-icon-ipad.jpeg">
     </head>
     <body>
       <img></img>
@@ -76,8 +79,8 @@ describe('Crawler', function () {
     }
   });
 
-  it('Should be able to find all css files in a HTML document', function () {
-    const cssFound = this.crawler.getAllCSS(getDummyHtml());
+  it('Should be able to find all css files and images from link elements', function () {
+    const cssFound = this.crawler.crawlOverLinkElements(getDummyHtml());
 
     should.exist(cssFound);
     cssFound.should.be.an('array');
@@ -85,7 +88,7 @@ describe('Crawler', function () {
     cssFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
-      string.should.match(/.*css$/);
+      string.should.match(/.*(css|png|jpeg|jpg|ico|gif)$/);
     });
   });
 });
