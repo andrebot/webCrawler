@@ -7,30 +7,21 @@ const { URL } = require('url');
 const Crawler = {
   requestPage,
   addUrlToCrawl,
+  crawlPage,
   crawlOverLinkElements,
   crawlOverScriptElements
 };
 
 const _pagesToVisit = [];
 const _contents = [];
-let _domain;
 
 async function requestPage(url) {
-  _domain = new URL(url);
-
-  const options = {
-    url: _domain.href,
+  return await Request({
+    url,
     transform: function (body) {
       return Cheerio.load(body);
     }
-  }
-
-  try {
-    return await Request(options);
-  } catch(error) {
-    console.error(error);
-    console.error(`Could not request from ${url}.`);
-  }
+  });
 }
 
 function crawlOverLinkElements ($) {
@@ -62,36 +53,37 @@ function crawlOverScriptElements($) {
   return content;
 }
 
+function crawlOverAnchorElements($) {
+  
+}
+
 async function crawlPage(url) {
-  try {
-    const $ = await requestPage(url);
+  const urlInfo = new URL(url);
+  const $ = await requestPage(urlInfo.href);
 
-    const page = {
-      url: url,
-      assets: []
-    };
+  const page = {
+    url,
+    assets: [],
+    links:  []
+  };
 
-    page.assets.concat(crawlOverLinkElements($));
-    page.assets.concat(crawlOverScriptElements($));
+  page.assets.concat(crawlOverLinkElements($));
+  page.assets.concat(crawlOverScriptElements($));
+  page.links.concat(crawlOverAnchorElements($));
 
-    // $('a').each(function (index, element) {
-    //   const link = $(element).attr('href');
+  // $('a').each(function (index, element) {
+  //   const link = $(element).attr('href');
 
-    //   /*if (is a valid domain) {
-    //     addUrlToCrawl();
-    //   }*/
-    // });
+  //   /*if (is a valid domain) {
+  //     addUrlToCrawl();
+  //   }*/
+  // });
 
-    // $('script').each(function (index, element) {
+  // $('script').each(function (index, element) {
 
-    // });
-  } catch (error) {
-    if (error.message === 'Invalid url') {
-      console.log('We couldn\`t get the page due to malformed URL, please try again with a valid URL.')
-    }
+  // });
 
-    throw error;
-  }
+  return page;
 }
 
 function addUrlToCrawl(url) {
@@ -100,12 +92,22 @@ function addUrlToCrawl(url) {
 
 async function crawlPages() {
   while(_pagesToVisit.length > 0) {
-    const pageContent = await crawlPage(_pagesToVisit.pop());
+    const page = _pagesToVisit.pop();
 
-    _contents.push(pageContent);
+    try {
+      const pageContent = await crawlPage(page);
+
+      _contents.push(pageContent);
+    } catch (error) {
+      console.error(error);
+      console.error(`Could not crawl over ${page}.`);
+    } finally {
+      console.log(`Remaning pages to crawl ${_pagesToVisit.length}`);
+    }
+    
   }
 
-  console.log('Crawl finished.');
+  console.info('Crawl finished.');
 }
 
 module.exports = function Factory () {

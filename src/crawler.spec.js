@@ -49,7 +49,7 @@ describe('Crawler', function () {
     this.dummyHtml = getDummyHtml();
   });
 
-  it('Should be able to request a website', async function () {
+  it('Should be able to request a website transpiled by Cheerio', async function () {
     try {
       const $ = await this.crawler.requestPage(DUMMY_URL);
 
@@ -64,21 +64,21 @@ describe('Crawler', function () {
 
   it('Should not accept invalid urls', async function () {
     try {
-      const $ = await this.crawler.requestPage(DUMMY_BAD_URL);
+      const $ = await this.crawler.crawlPage(DUMMY_BAD_URL);
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq(`TypeError [ERR_INVALID_URL]: Invalid URL: ${DUMMY_BAD_URL}`);
     }
 
     try {
-      const $ = await this.crawler.requestPage();
+      const $ = await this.crawler.crawlPage();
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: undefined');
     }
 
     try {
-      const $ = await this.crawler.requestPage('');
+      const $ = await this.crawler.crawlPage('');
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: ');
