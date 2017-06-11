@@ -86,7 +86,7 @@ describe('Crawler', function () {
   });
 
   it('Should be able to find all css files and images from link elements', function () {
-    const cssFound = this.crawler.crawlOverLinkElements(this.dummyHtml);
+    const cssFound = this.crawler.crawlOverLinkElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
     should.exist(cssFound);
     cssFound.should.be.an('array');
@@ -94,14 +94,12 @@ describe('Crawler', function () {
     cssFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
-      string.should.match(/.*(css|png|jpeg|jpg|ico|gif)$/);
+      string.should.match(/^http.*(css|png|jpeg|jpg|ico|gif)$/);
     });
   });
 
   it('Should be able to find all script files', function () {
-    const jsFound = this.crawler.crawlOverScriptElements(this.dummyHtml);
-
-    const scriptsFound = this.crawler.crawlOverScriptElements(this.dummyHtml);
+    const jsFound = this.crawler.crawlOverScriptElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
     should.exist(jsFound);
     jsFound.should.be.an('array');
@@ -109,7 +107,16 @@ describe('Crawler', function () {
     jsFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
-      string.should.match(/.*js$/);
+      string.should.match(/^http.*js$/);
     });
   });
+
+  it('should',async function () {
+    try {
+      const page = this.crawler.crawlPage(DUMMY_URL);
+
+    } catch (error) {
+      console.error(error);
+    }
+  })
 });

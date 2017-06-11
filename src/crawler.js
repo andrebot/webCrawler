@@ -2,7 +2,8 @@
 
 const Request = require('request-promise');
 const Cheerio = require('cheerio');
-const { URL } = require('url');
+const nodeUrl = require('url');
+const URL = nodeUrl.URL;
 
 const Crawler = {
   requestPage,
@@ -24,14 +25,19 @@ async function requestPage(url) {
   });
 }
 
-function crawlOverLinkElements ($) {
+function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
   const content = [];
 
-  $('link').each(function (index, element) {
-    const value = $(element).attr('href');
+  $(selector).each(function (index, element) {
+    const value = $(element).attr(attr);
 
-    if (/.*(css|png|jpeg|jpg|ico|gif)/i.test(value)) {
-      content.push(value);
+    if (extensionRegExp.test(value)) {
+
+      if(/^http/i.test(value)) {
+        content.push(value);
+      } else {
+        content.push(nodeUrl.resolve(urlInfo.href, value));
+      }
     }
 
   });
@@ -39,18 +45,16 @@ function crawlOverLinkElements ($) {
   return content;
 }
 
-function crawlOverScriptElements($) {
-  const content = [];
+function crawlOverLinkElements ($, urlInfo) {
+  const regExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
 
-  $('script').each(function (index, element) {
-    const value = $(element).attr('src');
+  return _crawlOverElement('link', 'href', $, urlInfo, regExp);
+}
 
-    if (/.*js/.test(value)) {
-      content.push(value);
-    }
-  });
+function crawlOverScriptElements($, urlInfo) {
+  const regExp = /.*js/i;
 
-  return content;
+  return _crawlOverElement('script', 'src', $, urlInfo, regExp);
 }
 
 function crawlOverAnchorElements($) {
@@ -67,9 +71,9 @@ async function crawlPage(url) {
     links:  []
   };
 
-  page.assets.concat(crawlOverLinkElements($));
-  page.assets.concat(crawlOverScriptElements($));
-  page.links.concat(crawlOverAnchorElements($));
+  page.assets.concat(crawlOverLinkElements($, urlInfo));
+  page.assets.concat(crawlOverScriptElements($, urlInfo));
+  page.links.concat(crawlOverAnchorElements($, urlInfo));
 
   // $('a').each(function (index, element) {
   //   const link = $(element).attr('href');
