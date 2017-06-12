@@ -18,6 +18,10 @@ const Crawler = {
 
 const _pagesToVisit = [];
 const _contents = [];
+const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
+const _jsRegExp = /.*js/i;
+const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
+const _anyRegExp = /.*/i;
 
 async function requestPage(url) {
   return await Request({
@@ -29,27 +33,19 @@ async function requestPage(url) {
 }
 
 function crawlOverLinkElements ($, urlInfo) {
-  const regExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
-
-  return _crawlOverElement('link', 'href', $, urlInfo, regExp);
+  return _crawlOverElement('link', 'href', $, urlInfo, _contentRegExp);
 }
 
 function crawlOverScriptElements($, urlInfo) {
-  const regExp = /.*js/i;
-
-  return _crawlOverElement('script', 'src', $, urlInfo, regExp);
+  return _crawlOverElement('script', 'src', $, urlInfo, _jsRegExp);
 }
 
 function crawlOverAnchorElements($, urlInfo) {
-  const regExp = /.*/i;
-
-  return _crawlOverElement('a', 'href', $, urlInfo, regExp);
+  return _crawlOverElement('a', 'href', $, urlInfo, _anyRegExp);
 }
 
 function crawlOverImgElements($, urlInfo) {
-  const regExp = /.*(png|jpeg|jpg|gif)/i;
-
-  return _crawlOverElement('img', 'src', $, urlInfo, regExp);
+  return _crawlOverElement('img', 'src', $, urlInfo, _imgRegExp);
 }
 
 async function crawlPage(url) {
