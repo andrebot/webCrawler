@@ -3,7 +3,6 @@
 const Request  = require('request-promise');
 const Cheerio  = require('cheerio');
 const Node_URL = require('url');
-const without  = require('lodash/without');
 const URL = Node_URL.URL;
 
 const Crawler = {
@@ -111,7 +110,13 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
     content = content.concat(attrsValues.map(attrValue => _verifyAttrValue(attrValue, urlInfo.href, extensionRegExp)));
   });
 
-  return without(content, undefined, null, '');
+  return content.reduce(function (prev, curr) {
+    if (curr) {
+      return prev.concat(curr);
+    } else {
+      return prev;
+    }
+  }, []);
 }
 
 function _verifyAttrValue(value, href, extensionRegExp) {
