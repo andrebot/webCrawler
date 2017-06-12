@@ -7,16 +7,14 @@ const URL = Node_URL.URL;
 
 const Crawler = {
   requestPage,
-  addUrlToCrawl,
   crawlPage,
+  crawlPages,
   crawlOverLinkElements,
   crawlOverScriptElements,
   crawlOverAnchorElements,
   crawlOverImgElements
 };
 
-const _pagesToVisit = [];
-const _pagesVisited = {};
 const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
 const _jsRegExp = /.*js/i;
 const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
@@ -56,7 +54,7 @@ async function crawlPage(url) {
       url,
       assets: [],
     },
-    links:  []
+    links: []
   };
 
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
@@ -67,28 +65,39 @@ async function crawlPage(url) {
   return page;
 }
 
-function addUrlToCrawl(url) {
-  _pagesToVisit.push(url);
-}
+async function crawlPages(startingUrl) {
+  const pagesToVisit = [startingUrl];
+  const pagesVisited = {};
 
-async function crawlPages() {
-  while(_pagesToVisit.length > 0) {
-    const page = _pagesToVisit.pop();
+  while(pagesToVisit.length > 0) {
+    const page = pagesToVisit.pop();
 
     try {
       const pageContent = await crawlPage(page);
 
-      _pagesToVisit.concat(pageContent.links);
+      pagesVisited[page] = pageContent.details;
+
+      pagesToVisit.concat(pageContent.links.reduce((links, link) => {
+        if (pagesVisited[link]) {
+          return links;
+        } else {
+          // validate URL to be the same domain as we are crawling
+            // if valid add into links
+            // if false do not add the link in question
+          return links.concat(link);
+        }
+      }, []));
     } catch (error) {
       console.error(error);
       console.error(`Could not crawl over ${page}.`);
     } finally {
-      console.log(`Remaning pages to crawl ${_pagesToVisit.length}`);
+      console.log(`Remaning pages to crawl ${pagesToVisit.length}`);
     }
-    
   }
 
   console.info('Crawl finished.');
+
+  return Object.keys(pagesVisited).map(key => pagesVisited[key]);
 }
 
 function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {

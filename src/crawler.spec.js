@@ -63,6 +63,7 @@ describe('Crawler', function () {
 
     } catch(error) {
       should.fail(error, undefined, 'Should have not thrown an error.');
+      console.log(error);
     }
   });
 
@@ -139,5 +140,18 @@ describe('Crawler', function () {
       string.should.not.be.empty;
       string.should.match(/^http/);
     });
+  });
+
+  xit('Should be able to visit all unique links from a page', async function () {
+    try {
+      const pageDetails = await this.crawler.crawlPages(DUMMY_URL);
+
+      should.exist(pageDetails);
+      pageDetails.should.be.an('array');
+      // check all atributes in the array to match of what was asked
+    } catch (error) {
+      should.fail(error, undefined, 'Should not thrown error');
+      console.log(error);
+    }
   });
 });
