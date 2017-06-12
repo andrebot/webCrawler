@@ -89,12 +89,13 @@ async function crawlPages(startingUrl) {
     try {
       const pageContent = await crawlPage(page);
 
-      pagesVisited[page] = pageContent.details;1
+      pagesVisited[page] = pageContent.details;
 
       pagesToVisit = pagesToVisit.concat(pageContent.links.reduce(function (links, link) {
         if (pagesVisited[link]) {
           return links;
         } else {
+          pagesVisited[link] = true;
           return links.concat(link);
         }
       }, []));
