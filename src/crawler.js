@@ -1,9 +1,10 @@
 'use strict';
 
-const Request = require('request-promise');
-const Cheerio = require('cheerio');
-const nodeUrl = require('url');
-const URL = nodeUrl.URL;
+const Request  = require('request-promise');
+const Cheerio  = require('cheerio');
+const Node_URL = require('url');
+const without  = require('lodash/without');
+const URL = Node_URL.URL;
 
 const Crawler = {
   requestPage,
@@ -11,7 +12,8 @@ const Crawler = {
   crawlPage,
   crawlOverLinkElements,
   crawlOverScriptElements,
-  crawlOverAnchorElements
+  crawlOverAnchorElements,
+  crawlOverImgElements
 };
 
 const _pagesToVisit = [];
@@ -44,6 +46,12 @@ function crawlOverAnchorElements($, urlInfo) {
   return _crawlOverElement('a', 'href', $, urlInfo, regExp);
 }
 
+function crawlOverImgElements($, urlInfo) {
+  const regExp = /.*(png|jpeg|jpg|gif)/i;
+
+  return _crawlOverElement('img', 'src', $, urlInfo, regExp);
+}
+
 async function crawlPage(url) {
   const urlInfo = new URL(url);
   const $ = await requestPage(urlInfo.href);
@@ -58,6 +66,7 @@ async function crawlPage(url) {
 
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
   page.links = page.links.concat(crawlOverAnchorElements($, urlInfo));
 
   return page;
@@ -91,22 +100,32 @@ async function crawlPages() {
 }
 
 function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
-  const content = [];
+  let content = [];
 
   $(selector).each(function (index, element) {
-    const value = $(element).attr(attr);
+    const attrsValues = [];
 
-    if (value && extensionRegExp.test(value)) {
-
-      if(/^http/i.test(value)) {
-        content.push(value);
-      } else {
-        content.push(nodeUrl.resolve(urlInfo.href, value));
-      }
+    if (attr) {
+      attrsValues.push($(element).attr(attr));
+    } else {
+      const elementAttrs = $(element).attr();
+      attrsValues = attrsValues.concat(Object.keys(elementAttrs).map(key => elementAttrs[key]));
     }
+
+    content = content.concat(attrsValues.map(attrValue => _verifyAttrValue(attrValue, urlInfo.href, extensionRegExp)));
   });
 
-  return content;
+  return without(content, undefined, null, '');
+}
+
+function _verifyAttrValue(value, href, extensionRegExp) {
+  if (value && extensionRegExp.test(value)) {
+    if(/^http/i.test(value)) {
+      return value;
+    } else {
+      return Node_URL.resolve(href, value);
+    }
+  }
 }
 
 module.exports = function Factory () {

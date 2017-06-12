@@ -19,9 +19,11 @@ function getDummyHtml () {
     <body>
       <img></img>
       <div>
-        <img></img>
+        <img src="/my/img.gif"></img>
+        <img src="/my/img_low.gif" data-original="/my/img_high.png"></img>
+        <img src="http://www.pudim.com/br"></img>
       </div>
-      <a></a>
+        <a></a>
       <div>
         <div>
           <a href="/any/thing">Relative link to own page</a>
@@ -120,6 +122,19 @@ describe('Crawler', function () {
     linksFound.should.be.an('array');
     linksFound.length.should.be.gt(0);
     linksFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/^http/);
+    });
+  });
+
+  it('Should be able to find all imgs in a page', function () {
+    const imgsFound = this.crawler.crawlOverImgElements(this.dummyHtml, new URL.URL(DUMMY_URL));
+
+    should.exist(imgsFound);
+    imgsFound.should.be.an('array');
+    imgsFound.length.should.be.gt(0);
+    imgsFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
       string.should.match(/^http/);
