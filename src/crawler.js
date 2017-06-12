@@ -16,7 +16,7 @@ const Crawler = {
 };
 
 const _pagesToVisit = [];
-const _contents = [];
+const _pagesVisited = {};
 const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
 const _jsRegExp = /.*js/i;
 const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
@@ -78,9 +78,6 @@ async function crawlPages() {
     try {
       const pageContent = await crawlPage(page);
 
-      _contents.push(pageContent.details);
-
-      // refactor this to not revist links already crawled over
       _pagesToVisit.concat(pageContent.links);
     } catch (error) {
       console.error(error);
@@ -107,16 +104,18 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
       attrsValues = attrsValues.concat(Object.keys(elementAttrs).map(key => elementAttrs[key]));
     }
 
-    content = content.concat(attrsValues.map(attrValue => _verifyAttrValue(attrValue, urlInfo.href, extensionRegExp)));
+    content = content.concat(attrsValues.reduce((validAttrs, attrToValidate) => {
+      const value = _verifyAttrValue(attrToValidate, urlInfo.href, extensionRegExp);
+
+      if (value) {
+        return validAttrs.concat(value);
+      } else {
+        return validAttrs;
+      }
+    }, []));
   });
 
-  return content.reduce(function (prev, curr) {
-    if (curr) {
-      return prev.concat(curr);
-    } else {
-      return prev;
-    }
-  }, []);
+  return content;
 }
 
 function _verifyAttrValue(value, href, extensionRegExp) {
@@ -127,6 +126,8 @@ function _verifyAttrValue(value, href, extensionRegExp) {
       return Node_URL.resolve(href, value);
     }
   }
+
+  return null;
 }
 
 module.exports = function Factory () {
