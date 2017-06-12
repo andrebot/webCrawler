@@ -60,7 +60,21 @@ async function crawlPage(url) {
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
-  page.links = page.links.concat(crawlOverAnchorElements($, urlInfo));
+  page.links = page.links.concat(crawlOverAnchorElements($, urlInfo).reduce(function (links, link) {
+    try {
+      const testUrl = new URL(link);
+
+      if (testUrl.origin === urlInfo.origin) {
+        return links.concat(link);
+      } else {
+        return links;
+      }
+    } catch (error) {
+      console.error(`There was an error parsing ${link} as an URL. Moving forward.`);
+
+      return links;
+    }
+  }, []));
 
   return page;
 }
@@ -77,13 +91,10 @@ async function crawlPages(startingUrl) {
 
       pagesVisited[page] = pageContent.details;
 
-      pagesToVisit.concat(pageContent.links.reduce((links, link) => {
+      pagesToVisit.concat(pageContent.links.reduce(function (links, link) {
         if (pagesVisited[link]) {
           return links;
         } else {
-          // validate URL to be the same domain as we are crawling
-            // if valid add into links
-            // if false do not add the link in question
           return links.concat(link);
         }
       }, []));
@@ -113,7 +124,7 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
       attrsValues = attrsValues.concat(Object.keys(elementAttrs).map(key => elementAttrs[key]));
     }
 
-    content = content.concat(attrsValues.reduce((validAttrs, attrToValidate) => {
+    content = content.concat(attrsValues.reduce(function (validAttrs, attrToValidate) {
       const value = _verifyAttrValue(attrToValidate, urlInfo.href, extensionRegExp);
 
       if (value) {

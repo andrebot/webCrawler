@@ -47,6 +47,23 @@ const Crawler = require('./crawler');
 const DUMMY_URL = 'https://www.avenuecode.com';
 const DUMMY_BAD_URL = 'mamamia';
 
+function checkIfValidArray(array) {
+  should.exist(array);
+  array.should.be.an('array');
+  array.length.should.be.gt(0);
+}
+
+function checkIfValidUrl(url) {
+  should.exist(url);
+  url.should.not.be.empty;
+  try { 
+    new URL.URL(url)
+  } catch (error) {
+    console.error(`Invalid URL ${url}.`);
+    should.fail(error, undefined, 'Should hane not thrown an error.');
+  }
+}
+
 describe('Crawler', function () {
   before(function () {
     this.crawler = Crawler();
@@ -93,9 +110,7 @@ describe('Crawler', function () {
   it('Should be able to find all css files and images from link elements', function () {
     const cssFound = this.crawler.crawlOverLinkElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    should.exist(cssFound);
-    cssFound.should.be.an('array');
-    cssFound.length.should.be.gt(0);
+    checkIfValidArray(cssFound);
     cssFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
@@ -106,9 +121,7 @@ describe('Crawler', function () {
   it('Should be able to find all script files', function () {
     const jsFound = this.crawler.crawlOverScriptElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    should.exist(jsFound);
-    jsFound.should.be.an('array');
-    jsFound.length.should.be.gt(0);
+    checkIfValidArray(jsFound);
     jsFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
@@ -119,9 +132,7 @@ describe('Crawler', function () {
   it('Should be able to find all links in a page', function () {
     const linksFound = this.crawler.crawlOverAnchorElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    should.exist(linksFound);
-    linksFound.should.be.an('array');
-    linksFound.length.should.be.gt(0);
+    checkIfValidArray(linksFound);
     linksFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
@@ -132,9 +143,7 @@ describe('Crawler', function () {
   it('Should be able to find all imgs in a page', function () {
     const imgsFound = this.crawler.crawlOverImgElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    should.exist(imgsFound);
-    imgsFound.should.be.an('array');
-    imgsFound.length.should.be.gt(0);
+    checkIfValidArray(imgsFound);
     imgsFound.forEach(function (string) {
       should.exist(string);
       string.should.not.be.empty;
@@ -142,16 +151,15 @@ describe('Crawler', function () {
     });
   });
 
-  xit('Should be able to visit all unique links from a page', async function () {
-    try {
-      const pageDetails = await this.crawler.crawlPages(DUMMY_URL);
+  it('Should be able to visit all unique links from a page', async function () {
+    const pageDetails = await this.crawler.crawlPages(DUMMY_URL);
 
-      should.exist(pageDetails);
-      pageDetails.should.be.an('array');
-      // check all atributes in the array to match of what was asked
-    } catch (error) {
-      should.fail(error, undefined, 'Should not thrown error');
-      console.log(error);
-    }
+    checkIfValidArray(pageDetails);
+    pageDetails.length.should.be.eq(3);
+    pageDetails.forEach(function (details) {
+      checkIfValidUrl(details.url);
+      checkIfValidArray(details.assets);
+      details.assets.forEach(checkIfValidUrl);
+    });
   });
 });
