@@ -24,7 +24,9 @@ function getDummyHtml () {
       <a></a>
       <div>
         <div>
-          <a></a>
+          <a href="/any/thing">Relative link to own page</a>
+          <a href="thing">Relative link to own page 2</a>
+          <a href="http://www.ahoi.com">Link to another page</a>
         </div>
       </div>
 
@@ -111,12 +113,16 @@ describe('Crawler', function () {
     });
   });
 
-  it('should',async function () {
-    try {
-      const page = this.crawler.crawlPage(DUMMY_URL);
+  it('Should be able to find all links in a page', function () {
+    const linksFound = this.crawler.crawlOverAnchorElements(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    } catch (error) {
-      console.error(error);
-    }
-  })
+    should.exist(linksFound);
+    linksFound.should.be.an('array');
+    linksFound.length.should.be.gt(0);
+    linksFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/^http/);
+    });
+  });
 });

@@ -10,7 +10,8 @@ const Crawler = {
   addUrlToCrawl,
   crawlPage,
   crawlOverLinkElements,
-  crawlOverScriptElements
+  crawlOverScriptElements,
+  crawlOverAnchorElements
 };
 
 const _pagesToVisit = [];
@@ -25,26 +26,6 @@ async function requestPage(url) {
   });
 }
 
-function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
-  const content = [];
-
-  $(selector).each(function (index, element) {
-    const value = $(element).attr(attr);
-
-    if (extensionRegExp.test(value)) {
-
-      if(/^http/i.test(value)) {
-        content.push(value);
-      } else {
-        content.push(nodeUrl.resolve(urlInfo.href, value));
-      }
-    }
-
-  });
-
-  return content;
-}
-
 function crawlOverLinkElements ($, urlInfo) {
   const regExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
 
@@ -57,8 +38,10 @@ function crawlOverScriptElements($, urlInfo) {
   return _crawlOverElement('script', 'src', $, urlInfo, regExp);
 }
 
-function crawlOverAnchorElements($) {
-  
+function crawlOverAnchorElements($, urlInfo) {
+  const regExp = /.*/i;
+
+  return _crawlOverElement('a', 'href', $, urlInfo, regExp);
 }
 
 async function crawlPage(url) {
@@ -66,26 +49,16 @@ async function crawlPage(url) {
   const $ = await requestPage(urlInfo.href);
 
   const page = {
-    url,
-    assets: [],
+    details: {
+      url,
+      assets: [],
+    },
     links:  []
   };
 
-  page.assets.concat(crawlOverLinkElements($, urlInfo));
-  page.assets.concat(crawlOverScriptElements($, urlInfo));
-  page.links.concat(crawlOverAnchorElements($, urlInfo));
-
-  // $('a').each(function (index, element) {
-  //   const link = $(element).attr('href');
-
-  //   /*if (is a valid domain) {
-  //     addUrlToCrawl();
-  //   }*/
-  // });
-
-  // $('script').each(function (index, element) {
-
-  // });
+  page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
+  page.links = page.links.concat(crawlOverAnchorElements($, urlInfo));
 
   return page;
 }
@@ -101,7 +74,10 @@ async function crawlPages() {
     try {
       const pageContent = await crawlPage(page);
 
-      _contents.push(pageContent);
+      _contents.push(pageContent.details);
+
+      // refactor this to not revist links already crawled over
+      _pagesToVisit.concat(pageContent.links);
     } catch (error) {
       console.error(error);
       console.error(`Could not crawl over ${page}.`);
@@ -112,6 +88,25 @@ async function crawlPages() {
   }
 
   console.info('Crawl finished.');
+}
+
+function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
+  const content = [];
+
+  $(selector).each(function (index, element) {
+    const value = $(element).attr(attr);
+
+    if (value && extensionRegExp.test(value)) {
+
+      if(/^http/i.test(value)) {
+        content.push(value);
+      } else {
+        content.push(nodeUrl.resolve(urlInfo.href, value));
+      }
+    }
+  });
+
+  return content;
 }
 
 module.exports = function Factory () {
