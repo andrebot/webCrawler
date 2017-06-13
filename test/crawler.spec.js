@@ -57,7 +57,7 @@ function getDummyHtml () {
 }
 
 mockReq('request-promise', getDummyHtml);
-const Crawler = require('./crawler');
+const Crawler = require('../src/crawler');
 
 function checkIfValidArray(array) {
   should.exist(array);

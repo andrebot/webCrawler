@@ -7,8 +7,9 @@
     "node": "8.1.0"
   },
   "scripts": {
-    "test": "mocha src/**/*.spec.js",
-    "tdd": "mocha -w src/**/*.spec.js",
+    "test": "mocha test/**/*.spec.js ",
+    "tdd": "mocha -w test/**/*.spec.js",
+    "coverage": "nyc --reporter=html --reporter=text mocha",
     "start": "node src/index.js"
   },
   "repository": {
@@ -25,7 +26,7 @@
     "chai": "^4.0.2",
     "mocha": "^3.4.2",
     "mock-require": "^2.0.2",
-    "require-dir": "^0.3.2"
+    "nyc": "^11.0.2"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.1",
