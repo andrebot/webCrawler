@@ -5,9 +5,9 @@ const Cheerio = require('cheerio');
 const URL     = require('url');
 const should  = require('chai').should();
 
-function getDummyHtml () {
- const html = 
-  `<html>
+const _returnHtml = {
+  fullHtml: `
+  <html>
     <head>
       <link rel="stylesheet" type="text/css" href="any.css"/>
       <link rel="stylesheet" type="text/css" href="any2.css"/>
@@ -36,9 +36,20 @@ function getDummyHtml () {
       <script src="/js/main.js"></script>
       <script src="/js/vendor.js"></script>
     </body>
-  </html>`;
+  </html>`,
+  partialHtmlWithLinks: `
+    <div>
+      <a href="/any/thing">Relative link to own page</a>
+      <a href="/any/thing?anyThing=haha">Relative link to own page</a>
+      <a href="thing">Relative link to own page 2</a>
+      <a href="http://www.ahoi.com">Link to another page</a>
+    </div>
+  `,
+  default: ''
+};
 
-  return Cheerio.load(html);
+function getDummyHtml () {
+  return Cheerio.load(_returnHtml.default);
 }
 
 mockReq('request-promise', getDummyHtml);
@@ -56,6 +67,8 @@ function checkIfValidArray(array) {
 function checkIfValidUrl(url) {
   should.exist(url);
   url.should.not.be.empty;
+  url.indexOf('#').should.be.eq(-1);
+
   try { 
     new URL.URL(url)
   } catch (error) {
@@ -67,6 +80,10 @@ function checkIfValidUrl(url) {
 describe('Crawler', function () {
   before(function () {
     this.crawler = Crawler();
+  });
+
+  beforeEach(function () {
+    _returnHtml.default = _returnHtml.fullHtml;
     this.dummyHtml = getDummyHtml();
   });
 
@@ -160,6 +177,30 @@ describe('Crawler', function () {
       checkIfValidUrl(details.url);
       checkIfValidArray(details.assets);
       details.assets.forEach(checkIfValidUrl);
+    });
+  });
+
+  it('Should be able to ignore links with query string', async function () {
+    _returnHtml.default = _returnHtml.partialHtmlWithLinks;
+
+    const pageDetails = await this.crawler.crawlPages(DUMMY_URL);
+
+    checkIfValidArray(pageDetails);
+    pageDetails.length.should.be.eq(3);
+    pageDetails.forEach(function (details) {
+      checkIfValidUrl(details.url);
+    });
+  });
+
+  it('Should be able to crawl links with query string if required', async function () {
+    _returnHtml.default = _returnHtml.partialHtmlWithLinks;
+    const queryCrawler = Crawler({_crawlOverQueryStrings: true})
+    const pageDetails = await queryCrawler.crawlPages(DUMMY_URL);
+
+    checkIfValidArray(pageDetails);
+    pageDetails.length.should.be.eq(4);
+    pageDetails.forEach(function (details) {
+      checkIfValidUrl(details.url);
     });
   });
 });

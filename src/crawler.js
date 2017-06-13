@@ -12,7 +12,8 @@ const Crawler = {
   crawlOverLinkElements,
   crawlOverScriptElements,
   crawlOverAnchorElements,
-  crawlOverImgElements
+  crawlOverImgElements,
+  _crawlOverQueryStrings: false
 };
 
 const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
@@ -91,12 +92,15 @@ async function crawlPages(startingUrl) {
 
       pagesVisited[page] = pageContent.details;
 
-      pagesToVisit = pagesToVisit.concat(pageContent.links.reduce(function (links, link) {
-        if (pagesVisited[link]) {
+      pagesToVisit = pagesToVisit.concat(pageContent.links.reduce((links, link) => {
+        // Removing fragment
+        const validLink = _clearLink(link, this._crawlOverQueryStrings);
+
+        if (pagesVisited[validLink]) {
           return links;
         } else {
-          pagesVisited[link] = true;
-          return links.concat(link);
+          pagesVisited[validLink] = true;
+          return links.concat(validLink);
         }
       }, []));
     } catch (error) {
@@ -110,6 +114,16 @@ async function crawlPages(startingUrl) {
   console.info('Crawl finished.');
 
   return Object.keys(pagesVisited).map(key => pagesVisited[key]);
+}
+
+function _clearLink (link, crawlOverQueryStrings) {
+  let validLink = link.split('#')[0];
+
+  if (!crawlOverQueryStrings && validLink.indexOf('?') > -1) {
+    validLink = validLink.split('?')[0];
+  }
+
+  return validLink;
 }
 
 function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
@@ -151,6 +165,6 @@ function _verifyAttrValue(value, href, extensionRegExp) {
   return null;
 }
 
-module.exports = function Factory () {
-  return Object.assign({}, Crawler);
+module.exports = function Factory (opt) {
+  return Object.assign({}, Crawler, opt);
 }
