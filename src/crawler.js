@@ -200,6 +200,7 @@ async function crawlPages(startingUrl) {
   let pagesToVisit = [startingUrl];
   const pagesVisited = {};
 
+  console.log(`Starting crawler on ${startingUrl}`);
   while(pagesToVisit.length > 0) {
     const page = pagesToVisit.pop();
 
