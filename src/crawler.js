@@ -42,7 +42,7 @@ function crawlOverAnchorElements($, urlInfo) {
 }
 
 function crawlOverImgElements($, urlInfo) {
-  return _crawlOverElement('img', 'src', $, urlInfo, _imgRegExp);
+  return _crawlOverElement('img', '', $, urlInfo, _imgRegExp);
 }
 
 async function crawlPage(url) {
@@ -116,7 +116,7 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
   let content = [];
 
   $(selector).each(function (index, element) {
-    const attrsValues = [];
+    let attrsValues = [];
 
     if (attr) {
       attrsValues.push($(element).attr(attr));
