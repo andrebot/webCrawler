@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "mocha src/**/*.spec.js",
-    "tdd": "mocha -w src/**/*.spec.js"
+    "tdd": "mocha -w src/**/*.spec.js",
+    "start": "node src/index.js"
   },
   "repository": {
     "type": "git",
