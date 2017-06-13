@@ -5,6 +5,8 @@ const Cheerio = require('cheerio');
 const URL     = require('url');
 const should  = require('chai').should();
 
+const DUMMY_URL = 'https://www.avenuecode.com';
+const DUMMY_BAD_URL = 'mamamia';
 const _returnHtml = {
   fullHtml: `
   <html>
@@ -30,6 +32,7 @@ const _returnHtml = {
           <a href="/any/thing">Relative link to own page 2</a>
           <a href="thing">Relative link to own page 2</a>
           <a href="http://www.ahoi.com">Link to another page</a>
+          <a href="http://subdomain.avenuecode.com">subdomain</a>
         </div>
       </div>
 
@@ -55,9 +58,6 @@ function getDummyHtml () {
 
 mockReq('request-promise', getDummyHtml);
 const Crawler = require('./crawler');
-
-const DUMMY_URL = 'https://www.avenuecode.com';
-const DUMMY_BAD_URL = 'mamamia';
 
 function checkIfValidArray(array) {
   should.exist(array);
@@ -104,25 +104,37 @@ describe('Crawler', function () {
 
   it('Should not accept invalid urls', async function () {
     try {
-      const $ = await this.crawler.crawlPage(DUMMY_BAD_URL);
+      await this.crawler.crawlPage(DUMMY_BAD_URL);
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq(`TypeError [ERR_INVALID_URL]: Invalid URL: ${DUMMY_BAD_URL}`);
     }
 
     try {
-      const $ = await this.crawler.crawlPage();
+      await this.crawler.crawlPage();
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: undefined');
     }
 
     try {
-      const $ = await this.crawler.crawlPage('');
+      await this.crawler.crawlPage('');
     } catch (error) {
       should.exist(error);
       error.toString().should.be.eq('TypeError [ERR_INVALID_URL]: Invalid URL: ');
     }
+  });
+
+  it('Should not add subdomain links as valid crawlable links', async function () {
+    const crawlerResult = await this.crawler.crawlPage(DUMMY_URL);
+    const linksFound = crawlerResult.links;
+
+    checkIfValidArray(linksFound);
+    linksFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/^http(s)?:\/\/www/);
+    });
   });
 
   it('Should be able to find all css files and images from link elements', function () {

@@ -60,6 +60,14 @@ const _jsRegExp = /.*js/i;
  */
 const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
 /**
+ * Regular expression for valid URL prefix
+ * 
+ * @var {RegExp} _validURLPrefix
+ * @memberof Crawler
+ * @private
+ */
+const _validURLPrefix = /^http/i;
+/**
  * Regular expression for anything
  * 
  * @var {RegExp} _anyRegExp
@@ -298,7 +306,7 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
  */
 function _verifyAttrValue(value, href, extensionRegExp) {
   if (value && extensionRegExp.test(value)) {
-    if(/^http/i.test(value)) {
+    if(_validURLPrefix.test(value)) {
       return value;
     } else {
       return Node_URL.resolve(href, value);
