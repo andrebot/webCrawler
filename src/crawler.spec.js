@@ -27,6 +27,7 @@ const _returnHtml = {
       <div>
         <div>
           <a href="/any/thing">Relative link to own page</a>
+          <a href="/any/thing">Relative link to own page 2</a>
           <a href="thing">Relative link to own page 2</a>
           <a href="http://www.ahoi.com">Link to another page</a>
         </div>
