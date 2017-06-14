@@ -17,8 +17,6 @@ if (cluster.isMaster) {
     return validParameters;
   }, {query: false});
 
-  console.log(parameters);
-
   if (!parameters.url) {
     throw new Error('No URL was provided. Please re-run with "url=<your_url>" as a parameter');
   }
