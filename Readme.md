@@ -25,15 +25,30 @@ Our test suite consists of:
  * [Mocha](https://mochajs.org/)
  * [Chai](http://chaijs.com/)
  * [Mock-Require](https://www.npmjs.com/package/mock-require)
+ * [NYC](https://github.com/istanbuljs/nyc)
 
 **Mocha** is our test runner and **ChaiJs** is our BDD framework. **Mock-Require** is taking care of mocking outside code when we need to.
 To run the tests you have to execute this in your terminal form the root folder:
 ```
 npm test
 ```
+### Coverage
+You can run the code coverage excuting this command in your terminal from the root folder:
+```
+npm run coverage
+```
+It will create two new folders: **.nyc_output** and **coverage**. The human readable one is inside **coverage** folder. You can open the 
+*index.html* with your favorite browser.
+
+### TDD
+For those who are interested in developing, there is a **tdd** task to help you to develop with your tests running. You can execute this from your root folder:
+```
+npm run tdd
+```
 
 ## Considerations
  * No config file was created due to how small was this project. I would end up creating more complexity by creating it;
  * I did this not concurrently because this was what was asked for me to do;
- * The test file is in the same folder as the source file to cimplify things too. I'm used to have a separate folder for testing but, again, to keep things simple I let it be there;
- * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes.
+ * Test files are in its own folder to better integrate with nyc;
+ * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
+ * No task automator was added because *NPM* took care of everything. No need of complex task handling.
