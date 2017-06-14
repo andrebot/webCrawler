@@ -2,86 +2,120 @@
 
 const cluster = require('cluster');
 const os      = require('os');
+const uniq    = require('lodash/uniq');
 
 const CrawlerManager = {
-  setUpWorkers,
+  initCrawlers,
   _crawlOverQueryStrings: false
 };
 
-function setUpWorkers (startingUrls) {
-  let pagesToVisit = startingUrls;
-  const idleWorkers = [];
-  const pagesVisited = {};
+const crawlerState = {
+  pagesToVisit: [],
+  idleWorkers: [],
+  pagesVisited: {},
+  totalWorkers: os.cpus().length
+};
 
-  const cpusNum = 2; //os.cpus().length;
+function initCrawlers (startingUrl) {
+  crawlerState.pagesToVisit.push(startingUrl);
 
-  for (let i = cpusNum - 1; i >= 0; i--) {
+  for (let i = crawlerState.totalWorkers; i > 0; i--) {
     cluster.fork();
   }
-
-  cluster.on('online', function () {
-    console.log('I\'ve just became online!');
-  });
 
   cluster.on('exit', function (worker, code, signal) {
     console.log(`Worker ${worker.process.pid} died with code ${code} and signal ${signal}`);
   });
 
-  cluster.on('message', function (worker, msg) {
-    if (msg.type === 'nextTask') {
-      console.log('Fetching next url');
+  cluster.on('message', _handleMessage(this._crawlOverQueryStrings));
 
-      if (msg.data.page) {
-        const page = msg.data.page;
-
-        console.log('There is data to be saved')
-        const pageDetails = page.details;
-
-        pagesVisited[pageDetails.url] = pageDetails;
-
-        pagesToVisit = pagesToVisit.concat(page.links.reduce((links, link) => {
-          // Removing fragment
-          const validLink = _clearLink(link, this._crawlOverQueryStrings);
-
-          if (pagesVisited[validLink]) {
-            return links;
-          } else {
-            pagesVisited[validLink] = true;
-            return links.concat(validLink);
-          }
-        }, []));
-      } else {
-        console.log('No data to be saved')
-      }
-
-      if (pagesToVisit.length === 0) {
-        idleWorkers.push(worker);
-        console.log(`We have ${idleWorkers.length} workers idle`);
-      } else {
-        console.log('Putting workers to work');
-        let working = 0;
-        while(idleWorkers.length > 0 || pagesToVisit.length > 0) {
-          const currentWorker = idleWorkers.shift();
-
-          worker.send({
-            type: 'crawlPage',
-            from: 'master',
-            data: {
-              url: pagesToVisit.pop()
-            }
-          });
-
-          working++;
-        }
-
-        console.log(`We have ${working} workers working`);
-      }
-    }
-  });
+  console.log('Events hooked');
 }
 
-function _manageWorker (worker, msg) {
-  
+function _handleMessage (crawlOverQueryStrings) {
+  return function (worker, msg) {
+    const {details, additionalPages, idle} = _manageWorker(worker, msg, crawlOverQueryStrings);
+
+    if (details) {
+      crawlerState.pagesVisited[details.url] = details
+    }
+
+    if (additionalPages.length > 0) {
+      crawlerState.pagesToVisit = uniq(crawlerState.pagesToVisit.concat(additionalPages));
+    }
+
+    console.log(`Worker ${worker.process.pid} idle, adding in the queue`);
+    crawlerState.idleWorkers.push(worker);
+
+    if (crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
+      console.log(`There is page to crawl! Go ${worker.process.pid}`);
+      while(crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
+        const currentWorker = crawlerState.idleWorkers.shift();
+
+        currentWorker.send({
+          type: 'crawlPage',
+          from: 'master',
+          data: {
+            url: crawlerState.pagesToVisit.pop()
+          }
+        });
+
+        console.log(`Crawler ${worker.process.pid} initiated. Remaining ${crawlerState.pagesToVisit.length} pages`);
+      }
+    }
+
+    if (crawlerState.idleWorkers.length === crawlerState.totalWorkers) {
+      crawlerState.idleWorkers.forEach(function (crawler) {
+        crawler.disconnect();
+      });
+
+      console.log(crawlerState.pagesVisited);
+    }
+  }
+}
+
+function _manageWorker (worker, msg, crawlOverQueryStrings) {
+  let workerState = {
+    details: null,
+    additionalPages: []
+  };
+
+  console.log(`Managing worker ${worker.process.pid}`);
+
+  if (msg.type === 'nextTask') {
+    workerState = _formatWorkerState(msg, crawlOverQueryStrings);
+  }
+
+  return workerState;
+}
+
+function _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings) {
+  const page = {
+    details: {},
+    additionalPages: []
+  };
+  const pageContent = msg.data.page;
+
+  if (pageContent && pageContent.details) {
+    console.log(`New content arrived! ${msg.from}`);
+    page.details = pageContent.details;
+
+    page.additionalPages = pageContent.links.reduce((links, link) => {
+       const validLink = _clearLink(link, crawlOverQueryStrings);
+
+      if (crawlerState.pagesVisited[validLink]) {
+        return links;
+      } else {
+        crawlerState.pagesVisited[validLink] = true;
+        return links.concat(validLink);
+      }
+    }, []);
+
+    console.log(`New content from ${msg.from} saved`);
+  }
+
+  console.log(`Sending back content from ${msg.from}`)
+  return page;
 }
 
 function _clearLink (link, crawlOverQueryStrings) {

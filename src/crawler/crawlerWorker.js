@@ -6,7 +6,8 @@ const Node_URL = require('url');
 const URL = Node_URL.URL;
 
 const CrawlerWorker = {
-  crawlPage
+  crawlPage,
+  crawlNextPage
 };
 
 /**
@@ -50,6 +51,14 @@ const _validURLPrefix = /^http/i;
  */
 const _anyRegExp = /.*/i;
 
+function crawlNextPage() {
+  process.send({
+    type: 'firstTask',
+    from: process.pid,
+    data: {}
+  });
+}
+
 /**
  * Request a page form the URL provided. The body of the request will be parsed by Cheerio
  * so we can crawl over it in a JQuery like environment.
@@ -62,29 +71,35 @@ const _anyRegExp = /.*/i;
  * @returns 
  */
 function crawlPage(url) {
-  const urlInfo = new URL(url);
+  try {
+    const urlInfo = new URL(url);
 
-  Request(url, function (error, response, body) {
-    if (error) {
-      console.error(error);
-      console.log(`There was an error trying to get page for ${url}. Moving forward.`);
+    Request(url, function (error, response, body) {
+      if (error) {
+        const msg = `${process.pid}: There was an error trying to get page for ${url}. Moving forward.`;
+        _handleError(error, url, msg);
+      } else if (response && response.statusCode === 200) {
+        console.log(`${process.pid}: Worker crawling a page!`);
+        _crawlPage(urlInfo, Cheerio.load(body));
+      } else {
+        const msg = `${process.pid}: There was an error trying to get page for ${url}, response with status ${response.statusCode}. Moving forward.`;
+        _handleError(error, url, msg);
+      }
+    });
+  } catch (error) {
+    const msg = `${process.pid}: There was an error validating the URL: ${url}. Moving forward.`;
+    _handleError(error, url, msg);
+  }
+}
 
-      process.send({
-        type: 'nextTask',
-        from: process.pid,
-        data: {}
-      });
-    } else if (response && response.statusCode === 200) {
-      _crawlPage(urlInfo, Cheerio.load(body));
-    } else {
-      console.log(`There was an error trying to get page for ${url}, response with status ${response.statusCode}. Moving forward.`);
+function _handleError(error, url, msg) {
+  console.error(error);
+  console.log(msg);
 
-      process.send({
-        type: 'nextTask',
-        from: process.pid,
-        data: {}
-      });
-    }
+  process.send({
+    type: 'nextTask',
+    from: process.pid,
+    data: {}
   });
 }
 
@@ -107,6 +122,7 @@ function _crawlPage(urlInfo, $) {
     links: []
   };
 
+  console.log(`${process.pid}: Crawl started`);
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
@@ -120,13 +136,13 @@ function _crawlPage(urlInfo, $) {
         return links;
       }
     } catch (error) {
-      console.error(`There was an error parsing ${link} as an URL. Moving forward.`);
+      console.error(`${process.pid}: There was an error parsing ${link} as an URL. Moving forward.`);
 
       return links;
     }
   }, []));
 
-  console.log(`Crawled page ${page.details.url}`);
+  console.log(`${process.pid}: Crawled page ${page.details.url}. Sending nextTask event`);
 
   process.send({
     type: 'nextTask',
@@ -249,5 +265,13 @@ function _verifyAttrValue(value, href, extensionRegExp) {
 }
 
 module.exports = function Factoty() {
-  return Object.assign({}, CrawlerWorker);
+  const newCrawler = Object.assign({}, CrawlerWorker);
+
+  process.on('message', function (msg) {
+    if (msg.type === 'crawlPage') {
+      newCrawler.crawlPage(msg.data.url);
+    }
+  });
+
+  return newCrawler;
 }
