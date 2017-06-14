@@ -26,6 +26,8 @@ function initCrawlers (startingUrl) {
   });
 
   cluster.on('message', _handleMessage(crawlerState, this._crawlOverQueryStrings));
+
+  console.log(`${crawlerState.totalWorkers} workers were created. Waiting to be started.`);
 }
 
 function _handleMessage (crawlerState, crawlOverQueryStrings) {
@@ -57,6 +59,8 @@ function _handleMessage (crawlerState, crawlOverQueryStrings) {
             url: crawlerState.pagesToVisit.pop()
           }
         });
+
+        console.log(`${crawlerState.pagesToVisit.length} pages remaining`);
       }
     }
 

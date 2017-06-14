@@ -1,22 +1,29 @@
 'use strict';
 
-const Crawler = require('./crawler');
+const cluster = require('cluster');
 
-const _variable = 'url=';
-const avenueCodeCrawler = Crawler();
+if (cluster.isMaster) {
+  const CrawlerManager = require('./crawler/crawlerManager');
 
-const urlToUse = process.argv.reduce(function (url, parameter) {
-  if (parameter.indexOf(_variable) > -1) {
-    return parameter.split(_variable)[1];
-  } else {
-    return url;
+  const _variable = 'url=';
+  const urlToUse = process.argv.reduce(function (url, parameter) {
+    if (parameter.indexOf(_variable) > -1) {
+      return parameter.split(_variable)[1];
+    } else {
+      return url;
+    }
+  }, null);
+
+  if (!urlToUse) {
+    throw new Error('No URL was provided. Please re-run with "url=<your_url>" as a parameter');
   }
-}, null);
 
-if (!urlToUse) {
-  throw new Error('No URL was provided. Please run the code with "url=<your_url>" as a parameter');
+  const manager = CrawlerManager();
+
+  manager.initCrawlers('http://www.avenuecode.com');
+} else {
+  const Crawler = require('./crawler/crawlerWorker');
+  const myWorker = Crawler();
+
+  myWorker.crawlNextPage();
 }
-
-avenueCodeCrawler.crawlPages(urlToUse).then(function (data) {
-  console.log(data);
-}).catch(console.error);
