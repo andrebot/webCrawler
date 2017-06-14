@@ -4,11 +4,32 @@ const cluster = require('cluster');
 const os      = require('os');
 const uniq    = require('lodash/uniq');
 
+/**
+ * This is the Crawler manager. It is responsible for manage all cralwer's and distribute all
+ * data between its children.
+ * 
+ * @namespace {Object}
+ */
+
+/**
+ * @typedef {Object} CrawlerState
+ * @property {String[]} pagesToVisit Array with all pages not yet crawled
+ * @property {cluster.Worker[]} idleWorkers workers which are not crawling
+ * @property {CrawlerWorker#PageAssets} pagesVisited Map with all data from each page visited
+ * @property {Number} totalWorkers Total of workers available
+ */
+
 const CrawlerManager = {
   initCrawlers,
   _crawlOverQueryStrings: false
 };
 
+/**
+ * This will setup a worker farm to crawl over pages. Each new farm will have it own state due to 
+ * clojure. This method will hook two handler, one for each events: message and exit.
+ * 
+ * @param {String} startingUrl first URL to be crawled
+ */
 function initCrawlers (startingUrl) {
   const crawlerState = {
     pagesToVisit: [startingUrl],
@@ -30,6 +51,16 @@ function initCrawlers (startingUrl) {
   console.log(`${crawlerState.totalWorkers} workers were created. Waiting to be started.`);
 }
 
+/**
+ * Creates a handler for the 'message' event from the workers, adding the crawlerState in the 
+ * scope. The handler will format any data which comes with the event, increment the 
+ * crawlerState if needed and manage idle workers. When assiging an URL to a worker it
+ * sends a 'message' event to it with the URL to be used
+ * 
+ * @fires cluster.Worker#message Node process event which will be listened by a worker.
+ * @param {CrawlerState} crawlerState 
+ * @param {Boolean} crawlOverQueryStrings 
+ */
 function _handleMessage (crawlerState, crawlOverQueryStrings) {
   return function (worker, msg) {
     const {
@@ -38,39 +69,51 @@ function _handleMessage (crawlerState, crawlOverQueryStrings) {
       idle
     } = _manageWorker(worker, msg, crawlerState.pagesVisited, crawlOverQueryStrings);
 
-    if (details) {
-      crawlerState.pagesVisited[details.url] = details
-    }
+    _incrementCrawlerState(crawlerState, details, additionalPages, worker);
 
-    if (additionalPages.length > 0) {
-      crawlerState.pagesToVisit = uniq(crawlerState.pagesToVisit.concat(additionalPages));
-    }
+    _assignWorkToWorkers(crawlerState);
 
-    crawlerState.idleWorkers.push(worker);
+    _checkStopCondition(crawlerState);
+  }
+}
 
-    if (crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
-      while(crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
-        const currentWorker = crawlerState.idleWorkers.shift();
+function _incrementCrawlerState (crawlerState, details, additionalPages, worker) {
+  if (details) {
+    crawlerState.pagesVisited[details.url] = details
+  }
 
-        currentWorker.send({
-          type: 'crawlPage',
-          from: 'master',
-          data: {
-            url: crawlerState.pagesToVisit.pop()
-          }
-        });
+  if (additionalPages.length > 0) {
+    crawlerState.pagesToVisit = uniq(crawlerState.pagesToVisit.concat(additionalPages));
+  }
 
-        console.log(`${crawlerState.pagesToVisit.length} pages remaining`);
-      }
-    }
+  crawlerState.idleWorkers.push(worker);
+}
 
-    if (crawlerState.idleWorkers.length === crawlerState.totalWorkers) {
-      crawlerState.idleWorkers.forEach(function (crawler) {
-        crawler.disconnect();
+function _assignWorkToWorkers (crawlerState) {
+  if (crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
+    while(crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
+      const currentWorker = crawlerState.idleWorkers.shift();
+
+      currentWorker.send({
+        type: 'crawlPage',
+        from: 'master',
+        data: {
+          url: crawlerState.pagesToVisit.pop()
+        }
       });
 
-      console.log(crawlerState.pagesVisited);
+      console.log(`${crawlerState.pagesToVisit.length} pages remaining`);
     }
+  }
+}
+
+function _checkStopCondition (crawlerState) {
+  if (crawlerState.idleWorkers.length === crawlerState.totalWorkers) {
+    crawlerState.idleWorkers.forEach(function (crawler) {
+      crawler.disconnect();
+    });
+
+    console.log(crawlerState.pagesVisited);
   }
 }
 

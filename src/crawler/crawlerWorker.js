@@ -9,7 +9,7 @@ const URL = Node_URL.URL;
  * This is the worker which will actually crawl over the pages. Each worker crawls over one page
  * at a time, compiling a list of assets found in that page.
  * 
- * @namespace {object} CrawlerWorker
+ * @namespace {Object} CrawlerWorker
  */
 
 /**
@@ -109,7 +109,7 @@ function crawlNextPage() {
  * @throws {StatusCodeError}
  * @throws {TransformError}
  * @memberof CrawlerWorker
- * @param {string} url full URL to the page
+ * @param {String} url full URL to the page
  */
 function crawlPage(url) {
   try {
@@ -140,7 +140,7 @@ function crawlPage(url) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverLinkElements ($, urlInfo) {
   return _crawlOverElement('link', 'href', $, urlInfo, _contentRegExp);
@@ -152,7 +152,7 @@ function crawlOverLinkElements ($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverScriptElements($, urlInfo) {
   return _crawlOverElement('script', 'src', $, urlInfo, _jsRegExp);
@@ -164,7 +164,7 @@ function crawlOverScriptElements($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all links found in this element
+ * @returns {String[]} array with all links found in this element
  */
 function crawlOverAnchorElements($, urlInfo) {
   return _crawlOverElement('a', 'href', $, urlInfo, _anyRegExp);
@@ -176,7 +176,7 @@ function crawlOverAnchorElements($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverImgElements($, urlInfo) {
   return _crawlOverElement('img', '', $, urlInfo, _imgRegExp);
@@ -216,7 +216,7 @@ function _handleError(error, msg) {
  * @throws {StatusCodeError}
  * @throws {TransformError}
  * @fires process#message Node process event which will be listened by the main thread.
- * @param {string} url Full URL to a page which will be crawled
+ * @param {String} url Full URL to a page which will be crawled
  * @returns {CrawlingResult} All info found in the crawled page
  */
 function _crawlPage(urlInfo, $) {
@@ -262,12 +262,12 @@ function _crawlPage(urlInfo, $) {
  * 
  * @memberof Crawler
  * @private
- * @param {string} selector defines which elements we are crawling
- * @param {string} [attr] defines which attribute should be crawled. None means to crawl over all.
+ * @param {String} selector defines which elements we are crawling
+ * @param {String} [attr] defines which attribute should be crawled. None means to crawl over all.
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
  * @param {RegExp} extensionRegExp Regular expression defining which are the valid extensions
- * @returns {string[]} Strings with all valid values founded.
+ * @returns {String[]} Strings with all valid values founded.
  */
 function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
   let content = [];
@@ -302,10 +302,10 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
  * 
  * @memberof Crawler
  * @private
- * @param {string} value Element's attribute value
- * @param {string} href Page's origin URL
+ * @param {String} value Element's attribute value
+ * @param {String} href Page's origin URL
  * @param {RegExp} extensionRegExp Regular expression which defines which extension we a looking for
- * @returns {string} Full path of the resource found
+ * @returns {String} Full path of the resource found
  */
 function _verifyAttrValue(value, href, extensionRegExp) {
   if (value && extensionRegExp.test(value)) {
