@@ -56,4 +56,5 @@ npm run tdd
  * Test files are in its own folder to better integrate with nyc;
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
  * No task automator was added because *NPM* took care of everything. No need of complex task handling;
- * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on.
+ * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on;
+ * I've created another branch with a concurrent version of this code, pelase check it out.
