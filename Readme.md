@@ -59,3 +59,4 @@ npm run tdd
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
  * No task automator was added because *NPM* took care of everything. No need of complex task handling;
  * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on.
+ * There is one improvement point whic I could refactor the event types into its own class and make it more consistent between CrawlerWorker and CrawlerManager
