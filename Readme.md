@@ -6,7 +6,7 @@ fragment or query parameter. However, ignoring the query parameter is optional, 
 This project was developed with Node v8.1.0. And we are using these packages:
  * [Cheerio](https://github.com/cheeriojs/cheerio)
  * [Request](https://www.npmjs.com/package/request)
- * [Request-Promise](https://github.com/request/request-promise)
+ * [lodash](https://lodash.com/)
 
 ## Installing
  First thing to do is to clone this repo into your machine. After that run in your terminal from the root folder:
@@ -48,7 +48,7 @@ npm run tdd
 
 ## Considerations
  * No config file was created due to how small was this project. I would end up creating more complexity by creating it;
- * I did this not concurrently because this was what was asked for me to do;
+ * This version was coded just for fun;
  * Test files are in its own folder to better integrate with nyc;
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
  * No task automator was added because *NPM* took care of everything. No need of complex task handling.
