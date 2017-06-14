@@ -22,6 +22,6 @@ const avenueCodeCrawler = Crawler({
   _crawlOverQueryStrings: parameters.query
 });
 
-avenueCodeCrawler.crawlPages(urlToUse).then(function (data) {
+avenueCodeCrawler.crawlPages(parameters.url).then(function (data) {
   console.log(data);
 }).catch(console.error);
