@@ -22,7 +22,7 @@ npm start -- url=http://www.yourUrl.com
 the **url** parameter is the crawling starting point to our application. Tehre is an optional parameter that you can set, which is **query**, this parameter
 decides if the application will crawl over links with query parameters or not.
 ```
-npm start -- url=http://www.yourUrl.com --query=true
+npm start -- url=http://www.yourUrl.com query=true
 ```
 
 ## Testing
@@ -59,4 +59,4 @@ npm run tdd
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
  * No task automator was added because *NPM* took care of everything. No need of complex task handling;
  * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on.
- * There is one improvement point whic I could refactor the event types into its own class and make it more consistent between CrawlerWorker and CrawlerManager
+ * There is one improvement point: I could refactor the event types into its own class and make it more consistent between CrawlerWorker and CrawlerManager
