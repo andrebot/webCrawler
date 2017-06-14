@@ -76,18 +76,19 @@ function crawlPage(url) {
 
     Request(url, function (error, response, body) {
       if (error) {
-        const msg = `${process.pid}: There was an error trying to get page for ${url}. Moving forward.`;
+        const msg = `There was an error trying to get page for ${url}. Moving forward.`;
+
         _handleError(error, url, msg);
       } else if (response && response.statusCode === 200) {
-        console.log(`${process.pid}: Worker crawling a page!`);
         _crawlPage(urlInfo, Cheerio.load(body));
       } else {
-        const msg = `${process.pid}: There was an error trying to get page for ${url}, response with status ${response.statusCode}. Moving forward.`;
+        const msg = `There was an error trying to get page for ${url}, response with status ${response.statusCode}. Moving forward.`;
+
         _handleError(error, url, msg);
       }
     });
   } catch (error) {
-    const msg = `${process.pid}: There was an error validating the URL: ${url}. Moving forward.`;
+    const msg = `There was an error validating the URL: ${url}. Moving forward.`;
     _handleError(error, url, msg);
   }
 }
@@ -122,7 +123,6 @@ function _crawlPage(urlInfo, $) {
     links: []
   };
 
-  console.log(`${process.pid}: Crawl started`);
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
@@ -136,13 +136,11 @@ function _crawlPage(urlInfo, $) {
         return links;
       }
     } catch (error) {
-      console.error(`${process.pid}: There was an error parsing ${link} as an URL. Moving forward.`);
+      console.error(`${process.pid}: There was an error parsing ${link} as an URL. Going forward.`);
 
       return links;
     }
   }, []));
-
-  console.log(`${process.pid}: Crawled page ${page.details.url}. Sending nextTask event`);
 
   process.send({
     type: 'nextTask',

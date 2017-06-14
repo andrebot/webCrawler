@@ -9,15 +9,13 @@ const CrawlerManager = {
   _crawlOverQueryStrings: false
 };
 
-const crawlerState = {
-  pagesToVisit: [],
-  idleWorkers: [],
-  pagesVisited: {},
-  totalWorkers: os.cpus().length
-};
-
 function initCrawlers (startingUrl) {
-  crawlerState.pagesToVisit.push(startingUrl);
+  const crawlerState = {
+    pagesToVisit: [startingUrl],
+    idleWorkers: [],
+    pagesVisited: {},
+    totalWorkers: os.cpus().length
+  };
 
   for (let i = crawlerState.totalWorkers; i > 0; i--) {
     cluster.fork();
@@ -27,14 +25,18 @@ function initCrawlers (startingUrl) {
     console.log(`Worker ${worker.process.pid} died with code ${code} and signal ${signal}`);
   });
 
-  cluster.on('message', _handleMessage(this._crawlOverQueryStrings));
+  cluster.on('message', _handleMessage(crawlerState, this._crawlOverQueryStrings));
 
   console.log('Events hooked');
 }
 
-function _handleMessage (crawlOverQueryStrings) {
+function _handleMessage (crawlerState, crawlOverQueryStrings) {
   return function (worker, msg) {
-    const {details, additionalPages, idle} = _manageWorker(worker, msg, crawlOverQueryStrings);
+    const {
+      details,
+      additionalPages,
+      idle
+    } = _manageWorker(worker, msg, crawlerState.pagesVisited, crawlOverQueryStrings);
 
     if (details) {
       crawlerState.pagesVisited[details.url] = details
@@ -44,11 +46,9 @@ function _handleMessage (crawlOverQueryStrings) {
       crawlerState.pagesToVisit = uniq(crawlerState.pagesToVisit.concat(additionalPages));
     }
 
-    console.log(`Worker ${worker.process.pid} idle, adding in the queue`);
     crawlerState.idleWorkers.push(worker);
 
     if (crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
-      console.log(`There is page to crawl! Go ${worker.process.pid}`);
       while(crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
         const currentWorker = crawlerState.idleWorkers.shift();
 
@@ -59,8 +59,6 @@ function _handleMessage (crawlOverQueryStrings) {
             url: crawlerState.pagesToVisit.pop()
           }
         });
-
-        console.log(`Crawler ${worker.process.pid} initiated. Remaining ${crawlerState.pagesToVisit.length} pages`);
       }
     }
 
@@ -74,16 +72,14 @@ function _handleMessage (crawlOverQueryStrings) {
   }
 }
 
-function _manageWorker (worker, msg, crawlOverQueryStrings) {
+function _manageWorker (worker, msg, pagesVisited, crawlOverQueryStrings) {
   let workerState = {
     details: null,
     additionalPages: []
   };
 
-  console.log(`Managing worker ${worker.process.pid}`);
-
   if (msg.type === 'nextTask') {
-    workerState = _formatWorkerState(msg, crawlOverQueryStrings);
+    workerState = _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings);
   }
 
   return workerState;
@@ -97,24 +93,20 @@ function _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings) {
   const pageContent = msg.data.page;
 
   if (pageContent && pageContent.details) {
-    console.log(`New content arrived! ${msg.from}`);
     page.details = pageContent.details;
 
     page.additionalPages = pageContent.links.reduce((links, link) => {
        const validLink = _clearLink(link, crawlOverQueryStrings);
 
-      if (crawlerState.pagesVisited[validLink]) {
+      if (pagesVisited[validLink]) {
         return links;
       } else {
-        crawlerState.pagesVisited[validLink] = true;
+        pagesVisited[validLink] = true;
         return links.concat(validLink);
       }
     }, []);
-
-    console.log(`New content from ${msg.from} saved`);
   }
 
-  console.log(`Sending back content from ${msg.from}`)
   return page;
 }
 
