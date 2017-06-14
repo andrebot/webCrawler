@@ -15,8 +15,14 @@ const uniq    = require('lodash/uniq');
  * @typedef {Object} CrawlerState
  * @property {String[]} pagesToVisit Array with all pages not yet crawled
  * @property {cluster.Worker[]} idleWorkers workers which are not crawling
- * @property {CrawlerWorker#PageAssets} pagesVisited Map with all data from each page visited
+ * @property {Object} pagesVisited map an URL to its {@link CrawlerWorker#PageAssets}
  * @property {Number} totalWorkers Total of workers available
+ */
+
+/**
+ * @typedef {Object} WorkerState
+ * @property {CrawlerWorker#PageAssets} details Data crawled from a page
+ * @property {String[]} additionalPages links found in the page crawled
  */
 
 const CrawlerManager = {
@@ -57,6 +63,7 @@ function initCrawlers (startingUrl) {
  * crawlerState if needed and manage idle workers. When assiging an URL to a worker it
  * sends a 'message' event to it with the URL to be used
  * 
+ * @private
  * @fires cluster.Worker#message Node process event which will be listened by a worker.
  * @param {CrawlerState} crawlerState 
  * @param {Boolean} crawlOverQueryStrings 
@@ -77,6 +84,15 @@ function _handleMessage (crawlerState, crawlOverQueryStrings) {
   }
 }
 
+/**
+ * Increment the crawler state, adding pages visited, pages to visit and ilde workers.
+ * 
+ * @private
+ * @param {CrawlerState} crawlerState State to be incremented
+ * @param {CrawlerWorker#PageAssets} details Page data freshly crawled
+ * @param {String[]} additionalPages Links to be crawled
+ * @param {cluster.Worker} worker worker responsible to this page
+ */
 function _incrementCrawlerState (crawlerState, details, additionalPages, worker) {
   if (details) {
     crawlerState.pagesVisited[details.url] = details
@@ -89,6 +105,13 @@ function _incrementCrawlerState (crawlerState, details, additionalPages, worker)
   crawlerState.idleWorkers.push(worker);
 }
 
+/**
+ * Go through idle workers and assign new links to each one available.
+ * 
+ * @private
+ * @fires cluster.Worker#message Node process event which will be listened by the worker.
+ * @param {CrawlerState} crawlerState state with all idle workers and URLs to be visited
+ */
 function _assignWorkToWorkers (crawlerState) {
   if (crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
     while(crawlerState.idleWorkers.length > 0 && crawlerState.pagesToVisit.length > 0) {
@@ -107,6 +130,14 @@ function _assignWorkToWorkers (crawlerState) {
   }
 }
 
+/**
+ * Will check if we have any URL to crawl into and if there is any working worker. If everyone of
+ * them are idle and we do not have any URL to crawl, there will be no additional URLs to be 
+ * crawled, determining the end condition.
+ * 
+ * @private
+ * @param {CrawlerState} crawlerState state with all workers and number of workers
+ */
 function _checkStopCondition (crawlerState) {
   if (crawlerState.idleWorkers.length === crawlerState.totalWorkers) {
     crawlerState.idleWorkers.forEach(function (crawler) {
@@ -117,12 +148,24 @@ function _checkStopCondition (crawlerState) {
   }
 }
 
+/**
+ * Manages worker event types.
+ * 
+ * @private
+ * @param {cluster.Worker} worker worker which crawled the data
+ * @param {CrawlerWorker#CrawlerEvent} msg data which was sent by the worker 'message' event
+ * @param {Object} pagesVisited map an URL to its {@link CrawlerWorker#PageAssets}
+ * @param {Boolean} crawlOverQueryStrings flag to crawl over URL with query parameters
+ * @returns {@link WorkerState} data formated
+ */
 function _manageWorker (worker, msg, pagesVisited, crawlOverQueryStrings) {
   let workerState = {
     details: null,
     additionalPages: []
   };
 
+  // The type 'firstTask was not mapped because it is handled as a default action.
+  // We coded this so, if we have more events types in the future, we can increment here
   if (msg.type === 'nextTask') {
     workerState = _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings);
   }
@@ -130,6 +173,14 @@ function _manageWorker (worker, msg, pagesVisited, crawlOverQueryStrings) {
   return workerState;
 }
 
+/**
+ * Format Workers crawled data.
+ * 
+ * @param {CrawlerWorker#CrawlerEvent} msg data which was sent by the worker 'message' event
+ * @param {Object} pagesVisited map an URL to its {@link CrawlerWorker#PageAssets}
+ * @param {Boolean} crawlOverQueryStrings flag to crawl over URL with query parameters
+ * @returns {@link WorkerState} data formated
+ */
 function _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings) {
   const page = {
     details: {},
@@ -155,6 +206,14 @@ function _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings) {
   return page;
 }
 
+/**
+ * Removes fragment and query string parameters form the URL. We can toggle the query parameter
+ * removal.
+ * 
+ * @param {String} link 
+ * @param {Booler} crawlOverQueryStrings 
+ * @returns A formated URL
+ */
 function _clearLink (link, crawlOverQueryStrings) {
   let validLink = link.split('#')[0];
 
@@ -165,6 +224,13 @@ function _clearLink (link, crawlOverQueryStrings) {
   return validLink;
 }
 
+/**
+ * CrawlerManager composer. The only variable in the opts object which matters is 
+ * _crawlOverQueryStrings, which toggles the ability to crawl over links with 
+ * query parameters. Otherwise those links are ignored.
+ * 
+ * @returns a new CrawlerManager instance.
+ */
 module.exports = function factory(opts) {
   return Object.assign({}, CrawlerManager, opts);
 };
