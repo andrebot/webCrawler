@@ -26,8 +26,6 @@ function initCrawlers (startingUrl) {
   });
 
   cluster.on('message', _handleMessage(crawlerState, this._crawlOverQueryStrings));
-
-  console.log('Events hooked');
 }
 
 function _handleMessage (crawlerState, crawlOverQueryStrings) {
