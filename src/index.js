@@ -2,20 +2,25 @@
 
 const Crawler = require('./crawler');
 
-const _variable = 'url=';
-const avenueCodeCrawler = Crawler();
-
-const urlToUse = process.argv.reduce(function (url, parameter) {
-  if (parameter.indexOf(_variable) > -1) {
-    return parameter.split(_variable)[1];
-  } else {
-    return url;
+const _startingUrl = 'url=';
+const _queryParameter = 'query=';
+const parameters = process.argv.reduce(function (validParameters, parameter) {
+  if (parameter.indexOf(_startingUrl) > -1) {
+    validParameters.url = parameter.split(_startingUrl)[1];
+  } else if (parameter.indexOf(_queryParameter) > -1) {
+    validParameters.query = parameter.split(_queryParameter)[1] === 'true';
   }
-}, null);
 
-if (!urlToUse) {
+  return validParameters;
+}, {query: false});
+
+if (!parameters.url) {
   throw new Error('No URL was provided. Please run the code with "url=<your_url>" as a parameter');
 }
+
+const avenueCodeCrawler = Crawler({
+  _crawlOverQueryStrings: parameters.query
+});
 
 avenueCodeCrawler.crawlPages(urlToUse).then(function (data) {
   console.log(data);
