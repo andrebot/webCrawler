@@ -5,16 +5,51 @@ const Cheerio  = require('cheerio');
 const Node_URL = require('url');
 const URL = Node_URL.URL;
 
+/**
+ * This is the worker which will actually crawl over the pages. Each worker crawls over one page
+ * at a time, compiling a list of assets found in that page.
+ * 
+ * @namespace {object} CrawlerWorker
+ */
+
+/**
+ * @typedef {Object} PageAssets
+ * @property {String} url URL representing which page are this results
+ * @property {String[]} assets Links to all assets used in this pafe.
+ */
+
+/**
+ * @typedef {Object} CrawlingResult
+ * @property {PageAssets} details All page assets
+ * @property {String[]} links Valid links found in this page
+ */
+
+/**
+ * @typedef {Object} CrawlerEventData
+ * @property {CrawlingResult} page All data retrieved from the crawl
+ */
+
+/**
+ * @typedef {Object} CrawlerEvent
+ * @property {String} type Type of the 'message' event
+ * @property {Number} from PID of the worker who emitted the event
+ * @property {CrawlerEventData} data All data relevant to this event type
+ */
+
 const CrawlerWorker = {
   crawlPage,
-  crawlNextPage
+  crawlNextPage,
+  crawlOverLinkElements,
+  crawlOverScriptElements,
+  crawlOverAnchorElements,
+  crawlOverImgElements
 };
 
 /**
  * Regular expression for valid content file's extension
  * 
  * @var {RegExp} _contentRegExp
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @private
  */
 const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
@@ -22,7 +57,7 @@ const _contentRegExp = /.*(css|png|jpeg|jpg|ico|gif)/i;
  * Regular expression for valid JavaScript file's extension
  * 
  * @var {RegExp} _jsRegExp
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @private
  */
 const _jsRegExp = /.*js/i;
@@ -30,7 +65,7 @@ const _jsRegExp = /.*js/i;
  * Regular expression for valid image file's extension
  * 
  * @var {RegExp} _imgRegExp
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @private
  */
 const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
@@ -38,7 +73,7 @@ const _imgRegExp = /.*(png|jpeg|jpg|gif)/i;
  * Regular expression for valid URL prefix
  * 
  * @var {RegExp} _validURLPrefix
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @private
  */
 const _validURLPrefix = /^http/i;
@@ -46,11 +81,18 @@ const _validURLPrefix = /^http/i;
  * Regular expression for anything
  * 
  * @var {RegExp} _anyRegExp
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @private
  */
 const _anyRegExp = /.*/i;
 
+/**
+ * Sends a message through the IPC to the main thread (Crawler manager) to request a URL to be
+ * crawled. It sends {@link CrawlerEvent} to the main thread with the type of 'firstTask'.
+ * 
+ * @memberof CrawlerWorker
+ * @fires process#message Node process event which will be listened by the main thread.
+ */
 function crawlNextPage() {
   process.send({
     type: 'firstTask',
@@ -66,9 +108,8 @@ function crawlNextPage() {
  * @throws {RequestError}
  * @throws {StatusCodeError}
  * @throws {TransformError}
- * @memberof Crawler
+ * @memberof CrawlerWorker
  * @param {string} url full URL to the page
- * @returns 
  */
 function crawlPage(url) {
   try {
@@ -78,77 +119,19 @@ function crawlPage(url) {
       if (error) {
         const msg = `There was an error trying to get page for ${url}. Moving forward.`;
 
-        _handleError(error, url, msg);
+        _handleError(error, msg);
       } else if (response && response.statusCode === 200) {
         _crawlPage(urlInfo, Cheerio.load(body));
       } else {
         const msg = `There was an error trying to get page for ${url}, response with status ${response.statusCode}. Moving forward.`;
 
-        _handleError(error, url, msg);
+        _handleError(error, msg);
       }
     });
   } catch (error) {
     const msg = `There was an error validating the URL: ${url}. Moving forward.`;
-    _handleError(error, url, msg);
+    _handleError(error, msg);
   }
-}
-
-function _handleError(error, url, msg) {
-  console.error(error);
-  console.log(msg);
-
-  process.send({
-    type: 'nextTask',
-    from: process.pid,
-    data: {}
-  });
-}
-
-/**
- * Crawl over page to get all assets and links.
- * 
- * @throws {ERR_INVALID_URL}
- * @throws {RequestError}
- * @throws {StatusCodeError}
- * @throws {TransformError}
- * @param {string} url Full URL to a page which will be crawled
- * @returns {CrawlingResult} All info found in the crawled page
- */
-function _crawlPage(urlInfo, $) {
-  const page = {
-    details: {
-      url: urlInfo.href,
-      assets: [],
-    },
-    links: []
-  };
-
-  page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
-  page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
-  page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
-  page.links = page.links.concat(crawlOverAnchorElements($, urlInfo).reduce(function (links, link) {
-    try {
-      const testUrl = new URL(link);
-
-      if (testUrl.origin === urlInfo.origin) {
-        return links.concat(link);
-      } else {
-        return links;
-      }
-    } catch (error) {
-      console.error(`${process.pid}: There was an error parsing ${link} as an URL. Going forward.`);
-
-      return links;
-    }
-  }, []));
-
-  process.send({
-    type: 'nextTask',
-    from: process.pid,
-    data: {
-      page
-    }
-  });
 }
 
 /**
@@ -197,6 +180,80 @@ function crawlOverAnchorElements($, urlInfo) {
  */
 function crawlOverImgElements($, urlInfo) {
   return _crawlOverElement('img', '', $, urlInfo, _imgRegExp);
+}
+
+/**
+ * Error handler for CrawlerWorker. It will log the error, log a custom message, if available
+ * and send a message to the main thread (Crawler manager)  asking for a new URL to crawl.
+ * Errors are silent so we can keep crawling. It sends a {@link CrawlerEvent} with type
+ * 'nextTask'.
+ * 
+ * @fires process#message Node process event which will be listened by the main thread.
+ * @param {Error} error The Error catched
+ * @param {String} [msg] Custom message to be shown in the stdout
+ */
+function _handleError(error, msg) {
+  console.error(error);
+
+  if (msg) {
+    console.log(msg);
+  }
+
+  process.send({
+    type: 'nextTask',
+    from: process.pid,
+    data: {}
+  });
+}
+
+/**
+ * Crawl over page to get all assets and links. In the end it emits a 'message' event
+ * to the main process with {@link CrawlerEvent} with the type 'nextTask' containing
+ * all data crawled.
+ * 
+ * @throws {ERR_INVALID_URL}
+ * @throws {RequestError}
+ * @throws {StatusCodeError}
+ * @throws {TransformError}
+ * @fires process#message Node process event which will be listened by the main thread.
+ * @param {string} url Full URL to a page which will be crawled
+ * @returns {CrawlingResult} All info found in the crawled page
+ */
+function _crawlPage(urlInfo, $) {
+  const page = {
+    details: {
+      url: urlInfo.href,
+      assets: [],
+    },
+    links: []
+  };
+
+  page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
+  page.links = page.links.concat(crawlOverAnchorElements($, urlInfo).reduce(function (links, link) {
+    try {
+      const testUrl = new URL(link);
+
+      if (testUrl.origin === urlInfo.origin) {
+        return links.concat(link);
+      } else {
+        return links;
+      }
+    } catch (error) {
+      console.error(`${process.pid}: There was an error parsing ${link} as an URL. Going forward.`);
+
+      return links;
+    }
+  }, []));
+
+  process.send({
+    type: 'nextTask',
+    from: process.pid,
+    data: {
+      page
+    }
+  });
 }
 
 /**
@@ -262,6 +319,12 @@ function _verifyAttrValue(value, href, extensionRegExp) {
   return null;
 }
 
+/**
+ * CrawlerWorker composer. Sets up the worker and hook a listener to the main process event
+ * 'message', so we could listen to the main thread (Crawler Manager)
+ * 
+ * @returns a new CrawlerWorker instance.
+ */
 module.exports = function Factoty() {
   const newCrawler = Object.assign({}, CrawlerWorker);
 
