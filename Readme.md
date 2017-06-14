@@ -52,7 +52,7 @@ For those who are interested in developing, there is a **tdd** task to help you 
 npm run tdd
 ```
 
-## Considerations
+ ## Considerations
  * No config file was created due to how small was this project. I would end up creating more complexity by creating it;
  * This version was coded just for fun;
  * Test files are in its own folder to better integrate with nyc;
