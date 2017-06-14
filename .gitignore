@@ -3,4 +3,5 @@ yarn.lock
 .DS_STORE
 .coverrun
 .nyc_output
+.vscode
 coverage
