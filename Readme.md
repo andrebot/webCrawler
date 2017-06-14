@@ -19,6 +19,10 @@ In the root folder run this in your terminal:
 ```
 npm start -- url=http://www.yourUrl.com
 ```
+the **url** parameter is the crawling starting point to our application. Tehre is an optional parameter that you can set, which is **query**, this parameter
+decides if the application will crawl over links with query parameters or not.
+```
+npm start -- url=http://www.yourUrl.com --query=true
 
 ## Testing
 Our test suite consists of:
@@ -46,9 +50,10 @@ For those who are interested in developing, there is a **tdd** task to help you 
 npm run tdd
 ```
 
-## Considerations
+ ## Considerations
  * No config file was created due to how small was this project. I would end up creating more complexity by creating it;
  * I did this not concurrently because this was what was asked for me to do;
  * Test files are in its own folder to better integrate with nyc;
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
- * No task automator was added because *NPM* took care of everything. No need of complex task handling.
+ * No task automator was added because *NPM* took care of everything. No need of complex task handling;
+ * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on.
