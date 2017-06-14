@@ -26,6 +26,7 @@ npm start -- url=http://www.yourUrl.com --query=true
 ```
 
 ## Testing
+**DISCLAIMER** Tests are not working because I did not have time to do it yet. Since this was just a refactoring I did not use TDD on this.
 Our test suite consists of:
  * [Mocha](https://mochajs.org/)
  * [Chai](http://chaijs.com/)
@@ -56,4 +57,5 @@ npm run tdd
  * This version was coded just for fun;
  * Test files are in its own folder to better integrate with nyc;
  * I do believe that JavaScript can be better coded using object composition, that is why I did not use Classes;
- * No task automator was added because *NPM* took care of everything. No need of complex task handling.
+ * No task automator was added because *NPM* took care of everything. No need of complex task handling;
+ * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on.
