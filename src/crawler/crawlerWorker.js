@@ -85,6 +85,14 @@ const _validURLPrefix = /^http/i;
  * @private
  */
 const _anyRegExp = /.*/i;
+/**
+ * Regular expression for isolation the URL value from a 'background' attribute.
+ * 
+ * @var {ReagExp} _cssBackgroundClearRegExp
+ * @memberof Crawler
+ * @private
+ */
+const _cssBackgroundClearRegExp = /(url\(|"|\)|')/g;
 
 /**
  * Sends a message through the IPC to the main thread (Crawler manager) to request a URL to be
