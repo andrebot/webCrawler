@@ -23,6 +23,7 @@ the **url** parameter is the crawling starting point to our application. Tehre i
 decides if the application will crawl over links with query parameters or not.
 ```
 npm start -- url=http://www.yourUrl.com query=true
+```
 
 ## Testing
 Our test suite consists of:
