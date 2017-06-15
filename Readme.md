@@ -59,4 +59,6 @@ npm run tdd
  * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on;
  * There is a bug with links that are files (pdf, docx, etc...). I could not think in a way to not crawl those;
  * This code will try to extrack images from inline style, but will now download a CSS file and try to find an image. This would be a nice feature;
+ * Test are not covering all scenarios, it is missing some bad flows and error flows;
+ * this tool is not yet fully stable, some sites brake this application, maybe is the **request-promise** which is badly handled in this code;
  * I've created another branch with a concurrent version of this code, pelase check it out.
