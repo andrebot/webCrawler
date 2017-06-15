@@ -248,8 +248,6 @@ async function crawlPages(startingUrl) {
   while(pagesToVisit.length > 0) {
     const page = pagesToVisit.pop();
 
-    console.log('Going to ', page)
-
     try {
       const pageContent = await crawlPage(page);
 
