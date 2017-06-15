@@ -43,6 +43,7 @@ function initCrawlers (startingUrl) {
     pagesVisited: {},
     totalWorkers: os.cpus().length
   };
+  let workersDisconneted = 0;
 
   for (let i = crawlerState.totalWorkers; i > 0; i--) {
     cluster.fork();
@@ -50,6 +51,12 @@ function initCrawlers (startingUrl) {
 
   cluster.on('exit', function (worker, code, signal) {
     console.log(`Worker ${worker.process.pid} died with code ${code} and signal ${signal}`);
+    workersDisconneted++;
+
+    if (workersDisconneted === crawlerState.totalWorkers) {
+      process.stdout.write('\r');
+      console.log(JSON.stringify(crawlerState.pagesVisited, null, 2));
+    }
   });
 
   cluster.on('message', _handleMessage(crawlerState, this._crawlOverQueryStrings));
@@ -125,7 +132,7 @@ function _assignWorkToWorkers (crawlerState) {
         }
       });
 
-      console.log(`${crawlerState.pagesToVisit.length} pages remaining`);
+       process.stdout.write(`\r${crawlerState.pagesToVisit.length} pages remaining.`);
     }
   }
 }
@@ -143,8 +150,6 @@ function _checkStopCondition (crawlerState) {
     crawlerState.idleWorkers.forEach(function (crawler) {
       crawler.disconnect();
     });
-
-    console.log(crawlerState.pagesVisited);
   }
 }
 
