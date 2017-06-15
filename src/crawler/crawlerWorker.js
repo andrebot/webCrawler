@@ -183,6 +183,40 @@ function crawlOverImgElements($, urlInfo) {
 }
 
 /**
+ * Crawl over all elements with inline style to extract the background img from each.
+ * 
+ * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
+ * @param {URL} urlInfo Node's URL object
+ * @returns {String[]} array with all links from inline style
+ */
+function crawlOverElementsWithStyleAttribute($, urlInfo) {
+  const images = [];
+
+  $('[style]').each(function (index, element) {
+    let image = $(element).css('background-image');
+
+    if (!image) {
+      image = $(element).css('background');
+
+      if (image) {
+        // cleaning up background value to extract just the value inside the url()
+        image = image.split('url(')[1].split(' ')[0];
+      }
+    }
+
+    if (image) {
+      const validUrl = _verifyAttrValue(image.replace(_cssBackgroundClearRegExp, ''), urlInfo.origin, _anyRegExp);
+
+      if (validUrl) {
+        images.push(validUrl);
+      }
+    }
+  });
+
+  return images;
+}
+
+/**
  * Error handler for CrawlerWorker. It will log the error, log a custom message, if available
  * and send a message to the main thread (Crawler manager)  asking for a new URL to crawl.
  * Errors are silent so we can keep crawling. It sends a {@link CrawlerEvent} with type
@@ -231,6 +265,7 @@ function _crawlPage(urlInfo, $) {
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverElementsWithStyleAttribute($, urlInfo));
   page.links = page.links.concat(crawlOverAnchorElements($, urlInfo).reduce(function (links, link) {
     try {
       const testUrl = new URL(link);
