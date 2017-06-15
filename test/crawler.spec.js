@@ -184,8 +184,6 @@ describe('Crawler', function () {
   it('Should be able to find all images from elements with inline style', function () {
     const imgsFound = this.crawler.crawlOverElementsWithStyleAttribute(this.dummyHtml, new URL.URL(DUMMY_URL));
 
-    console.log(imgsFound);
-
     checkIfValidArray(imgsFound);
     imgsFound.forEach(function (string) {
       should.exist(string);

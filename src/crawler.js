@@ -171,7 +171,7 @@ function crawlOverElementsWithStyleAttribute($, urlInfo) {
 
       if (image) {
         // cleaning up background value to extract just the value inside the url()
-        image = image.split('url(\'')[1].split(' ')[0];
+        image = image.split('url(')[1].split(' ')[0];
       }
     }
 
@@ -247,6 +247,8 @@ async function crawlPages(startingUrl) {
   console.log(`Starting crawler on ${startingUrl}`);
   while(pagesToVisit.length > 0) {
     const page = pagesToVisit.pop();
+
+    console.log('Going to ', page)
 
     try {
       const pageContent = await crawlPage(page);
