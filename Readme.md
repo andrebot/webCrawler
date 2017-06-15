@@ -61,5 +61,5 @@ npm run tdd
  * We are not crawling over URLs with query parameters because this is usally a page listing data. This would generate a bunch of equals assets with little differences. However, feel free to toggle it on;
  * There is a bug with links that are files (pdf, docx, etc...). I could not think in a way to not crawl those;
  * This code will try to extrack images from inline style, but will now download a CSS file and try to find an image. This would be a nice feature;
- *Tthis tool is not yet fully stable, some sites this application crawls over too much links for some reason I do not understand   (T_T) ;
+ * This tool is not yet fully stable, some sites this application crawls over too much links for some reason I do not understand   (T_T) ;
  * There is two improvement point: I could refactor the event types into its own class and make it more consistent between CrawlerWorker and CrawlerManager. I could also use [winston](https://www.npmjs.com/package/winston) to have a batter log system (change stdout, wrinting the final result in a file, etc).
