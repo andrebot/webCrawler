@@ -170,7 +170,7 @@ function _manageWorker (worker, msg, pagesVisited, crawlOverQueryStrings) {
   };
 
   // The type 'firstTask was not mapped because it is handled as a default action.
-  // We coded this so, if we have more events types in the future, we can increment here
+  // I coded this so, if we have more events types in the future, we can increment here
   if (msg.type === 'nextTask') {
     workerState = _formatWorkerState(msg, pagesVisited, crawlOverQueryStrings);
   }
