@@ -9,19 +9,19 @@ const URL = Node_URL.URL;
  * Object which can crawl over pages. It will not go under subdomains but will crawl ovar all paths
  * in a page and compile a list of assets found in that page.
  * 
- * @namespace {object} Crawler
+ * @namespace {Object} Crawler
  */
 
 /**
  * @typedef {Object} PageAssets
- * @property {string} url URL representing which page are this results
- * @property {string[]} assets Links to all assets used in this pafe.
+ * @property {String} url URL representing which page are this results
+ * @property {String[]} assets Links to all assets used in this pafe.
  */
 
 /**
  * @typedef {Object} CrawlingResult
  * @property {PageAssets} details All page assets
- * @property {string[]} assets Valid links found in this page
+ * @property {String[]} assets Valid links found in this page
  */
 
 const Crawler = {
@@ -32,6 +32,7 @@ const Crawler = {
   crawlOverScriptElements,
   crawlOverAnchorElements,
   crawlOverImgElements,
+  crawlOverElementsWithStyleAttribute,
   _crawlOverQueryStrings: false
 };
 
@@ -75,6 +76,14 @@ const _validURLPrefix = /^http/i;
  * @private
  */
 const _anyRegExp = /.*/i;
+/**
+ * Regular expression for isolation the URL value from a 'background' attribute.
+ * 
+ * @var {ReagExp} _cssBackgroundClearRegExp
+ * @memberof Crawler
+ * @private
+ */
+const _cssBackgroundClearRegExp = /(url\(|"|\)|')/g;
 
 /**
  * Request a page form the URL provided. The body of the request will be parsed by Cheerio
@@ -84,7 +93,7 @@ const _anyRegExp = /.*/i;
  * @throws {StatusCodeError}
  * @throws {TransformError}
  * @memberof Crawler
- * @param {string} url full URL to the page
+ * @param {String} url full URL to the page
  * @returns {Promise} which will have it's data parsed by Cheerio
  */
 async function requestPage(url) {
@@ -102,7 +111,7 @@ async function requestPage(url) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverLinkElements ($, urlInfo) {
   return _crawlOverElement('link', 'href', $, urlInfo, _contentRegExp);
@@ -114,7 +123,7 @@ function crawlOverLinkElements ($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverScriptElements($, urlInfo) {
   return _crawlOverElement('script', 'src', $, urlInfo, _jsRegExp);
@@ -126,7 +135,7 @@ function crawlOverScriptElements($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all links found in this element
+ * @returns {String[]} array with all links found in this element
  */
 function crawlOverAnchorElements($, urlInfo) {
   return _crawlOverElement('a', 'href', $, urlInfo, _anyRegExp);
@@ -138,10 +147,44 @@ function crawlOverAnchorElements($, urlInfo) {
  * @memberof Crawler
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
- * @returns {string[]} array with all assets found in this element
+ * @returns {String[]} array with all assets found in this element
  */
 function crawlOverImgElements($, urlInfo) {
   return _crawlOverElement('img', '', $, urlInfo, _imgRegExp);
+}
+
+/**
+ * Crawl over all elements with inline style to extract the background img from each.
+ * 
+ * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
+ * @param {URL} urlInfo Node's URL object
+ * @returns {String[]} array with all links from inline style
+ */
+function crawlOverElementsWithStyleAttribute($, urlInfo) {
+  const images = [];
+
+  $('[style]').each(function (index, element) {
+    let image = $(element).css('background-image');
+
+    if (!image) {
+      image = $(element).css('background');
+
+      if (image) {
+        // cleaning up background value to extract just the value inside the url()
+        image = image.split('url(\'')[1].split(' ')[0];
+      }
+    }
+
+    if (image) {
+      const validUrl = _verifyAttrValue(image.replace(_cssBackgroundClearRegExp, ''), urlInfo.origin, _anyRegExp);
+
+      if (validUrl) {
+        images.push(validUrl);
+      }
+    }
+  });
+
+  return images;
 }
 
 /**
@@ -151,7 +194,7 @@ function crawlOverImgElements($, urlInfo) {
  * @throws {RequestError}
  * @throws {StatusCodeError}
  * @throws {TransformError}
- * @param {string} url Full URL to a page which will be crawled
+ * @param {String} url Full URL to a page which will be crawled
  * @returns {CrawlingResult} All info found in the crawled page
  */
 async function crawlPage(url) {
@@ -169,6 +212,7 @@ async function crawlPage(url) {
   page.details.assets = page.details.assets.concat(crawlOverLinkElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverScriptElements($, urlInfo));
   page.details.assets = page.details.assets.concat(crawlOverImgElements($, urlInfo));
+  page.details.assets = page.details.assets.concat(crawlOverElementsWithStyleAttribute($, urlInfo));
   page.links = page.links.concat(crawlOverAnchorElements($, urlInfo).reduce(function (links, link) {
     try {
       const testUrl = new URL(link);
@@ -193,7 +237,7 @@ async function crawlPage(url) {
  * page crawled.
  * 
  * @memberof Crawler
- * @param {string} startingUrl url which will be used to start the crawling. Should be a full URL
+ * @param {String} startingUrl url which will be used to start the crawling. Should be a full URL
  * @returns {PageAssets[]} Crawling results.
  */
 async function crawlPages(startingUrl) {
@@ -240,8 +284,8 @@ async function crawlPages(startingUrl) {
  * 
  * @memberof Crawler
  * @private
- * @param {string} link Link to be clean
- * @param {boolean} crawlOverQueryStrings toggle the query string parameters removal
+ * @param {String} link Link to be clean
+ * @param {Boolean} crawlOverQueryStrings toggle the query string parameters removal
  * @returns {String} clean link
  */
 function _clearLink (link, crawlOverQueryStrings) {
@@ -260,12 +304,12 @@ function _clearLink (link, crawlOverQueryStrings) {
  * 
  * @memberof Crawler
  * @private
- * @param {string} selector defines which elements we are crawling
- * @param {string} [attr] defines which attribute should be crawled. None means to crawl over all.
+ * @param {String} selector defines which elements we are crawling
+ * @param {String} [attr] defines which attribute should be crawled. None means to crawl over all.
  * @param {Cheerio} $ Cheerio loaded HTML object to interact with its elements
  * @param {URL} urlInfo Node's URL object
  * @param {RegExp} extensionRegExp Regular expression defining which are the valid extensions
- * @returns {string[]} Strings with all valid values founded.
+ * @returns {String[]} Strings with all valid values founded.
  */
 function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
   let content = [];
@@ -300,10 +344,10 @@ function _crawlOverElement (selector, attr, $, urlInfo, extensionRegExp) {
  * 
  * @memberof Crawler
  * @private
- * @param {string} value Element's attribute value
- * @param {string} href Page's origin URL
+ * @param {String} value Element's attribute value
+ * @param {String} href Page's origin URL
  * @param {RegExp} extensionRegExp Regular expression which defines which extension we a looking for
- * @returns {string} Full path of the resource found
+ * @returns {String} Full path of the resource found
  */
 function _verifyAttrValue(value, href, extensionRegExp) {
   if (value && extensionRegExp.test(value)) {
@@ -320,8 +364,8 @@ function _verifyAttrValue(value, href, extensionRegExp) {
 /**
  * Crawler composer.
  * 
- * @param {object} opt 
- * @param {boolean} opt._crawlOverQueryStrings toggle usage of query params in url
+ * @param {Object} opt 
+ * @param {Boolean} opt._crawlOverQueryStrings toggle usage of query params in url
  * @returns 
  */
 module.exports = function Factory (opt) {

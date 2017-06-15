@@ -20,14 +20,14 @@ const _returnHtml = {
     </head>
     <body>
       <img></img>
-      <div>
+      <div style="background: rgba(0, 0, 0, 0) url('http://www.any.com/img/photo.png') repeat scroll 50% 50% ">
         <img src="/my/img.gif"></img>
         <img src="/my/img_low.gif" data-original="/my/img_high.png"></img>
         <img src="http://www.pudim.com/br"></img>
       </div>
         <a></a>
       <div>
-        <div>
+        <div style="background-image: url('http://www.any.com/img/photo2.png')">
           <a href="/any/thing">Relative link to own page</a>
           <a href="/any/thing">Relative link to own page 2</a>
           <a href="thing">Relative link to own page 2</a>
@@ -172,6 +172,19 @@ describe('Crawler', function () {
 
   it('Should be able to find all imgs in a page', function () {
     const imgsFound = this.crawler.crawlOverImgElements(this.dummyHtml, new URL.URL(DUMMY_URL));
+
+    checkIfValidArray(imgsFound);
+    imgsFound.forEach(function (string) {
+      should.exist(string);
+      string.should.not.be.empty;
+      string.should.match(/^http/);
+    });
+  });
+
+  it('Should be able to find all images from elements with inline style', function () {
+    const imgsFound = this.crawler.crawlOverElementsWithStyleAttribute(this.dummyHtml, new URL.URL(DUMMY_URL));
+
+    console.log(imgsFound);
 
     checkIfValidArray(imgsFound);
     imgsFound.forEach(function (string) {
