@@ -268,7 +268,7 @@ async function crawlPages(startingUrl) {
       console.error(error);
       console.error(`Could not crawl over ${page}.`);
     } finally {
-      console.log(`Remaning pages to crawl ${pagesToVisit.length}`);
+      process.stdout.write(`\rRemaning pages to crawl ${pagesToVisit.length}...`);
     }
   }
 

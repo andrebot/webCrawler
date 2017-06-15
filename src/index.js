@@ -23,5 +23,6 @@ const avenueCodeCrawler = Crawler({
 });
 
 avenueCodeCrawler.crawlPages(parameters.url).then(function (data) {
-  console.log(data);
+  process.stdout.write("\r");
+  console.log(JSON.stringify(data, null, 2));
 }).catch(console.error);
